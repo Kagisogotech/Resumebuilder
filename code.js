@@ -1,4 +1,34 @@
 // A simple object to hold the application's state, similar to React's useState
+ document.addEventListener('DOMContentLoaded', () => {
+            // Function to show/hide elements with a fade transition
+            const showElement = (element) => {
+                element.classList.remove('hidden');
+                setTimeout(() => {
+                    element.style.opacity = 1;
+                }, 10);
+            };
+
+            const hideElement = (element) => {
+                element.style.opacity = 0;
+                setTimeout(() => {
+                    element.classList.add('hidden');
+                }, 500); // This duration should match the CSS transition duration
+            };
+
+            const welcomePage = document.getElementById('welcome-page');
+            const getStartedBtn = document.getElementById('get-started-btn');
+            const mainContent = document.getElementById('main-content');
+
+            // Handle the 'Get Started' button click
+            getStartedBtn.addEventListener('click', () => {
+                hideElement(welcomePage);
+                showElement(mainContent);
+            });
+            
+            // Re-render lucide icons after the main content is displayed
+            // The icons will not show up until this is called
+            lucide.createIcons();
+        });
 let state = {
     resumeData: {
         contact: {
