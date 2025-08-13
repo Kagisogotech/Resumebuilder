@@ -1,0 +1,113 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Base Resume Styles */
+.template-container {
+    padding: 2.5rem;
+    background-color: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.resume-ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--secondary-text-color);
+}
+
+.resume-ul li {
+    margin-bottom: 0.5rem;
+}
+
+/* Default/Modern Template (already in use) */
+.template-container.modern {
+    --primary-color: #0c4a6e; /* Deep Sky Blue */
+    --accent-color: #0ea5e9; /* Sky Blue */
+    --text-color: #1e293b; /* Dark Slate */
+    --secondary-text-color: #475569; /* Slate Gray */
+    font-family: 'Inter', sans-serif;
+    color: var(--text-color);
+}
+
+.template-container.modern .section-title {
+    border-bottom: 2px solid var(--accent-color);
+}
+
+.template-container.modern .resume-ul li::marker {
+    color: var(--accent-color);
+}
+
+/* Classic Template */
+.template-container.classic {
+    --primary-color: #1a202c; /* Deep Charcoal */
+    --accent-color: #3b82f6; /* Blue Accent */
+    --text-color: #2d3748; /* Dark Gray */
+    --secondary-text-color: #4a5568; /* Gray */
+    font-family: 'Times New Roman', Times, serif;
+    color: var(--text-color);
+}
+
+.template-container.classic .section-title {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 1.35rem;
+    border-bottom: 1px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.template-container.classic h1 {
+    font-family: Georgia, serif;
+    font-size: 2.5rem;
+}
+
+.template-container.classic h2 {
+    font-family: Georgia, serif;
+}
+
+.template-container.classic .resume-ul {
+    list-style-type: circle;
+}
+
+/* Professional Template */
+.template-container.professional {
+    --primary-color: #1f2937; /* Dark Gray */
+    --accent-color: #0d9488; /* Teal */
+    --text-color: #374151; /* Slate Gray */
+    --secondary-text-color: #6b7280; /* Light Gray */
+    font-family: Georgia, serif;
+    color: var(--text-color);
+    padding: 2.5rem 3.5rem;
+}
+
+.template-container.professional h1 {
+    font-family: 'Inter', sans-serif;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.template-container.professional .section-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.template-container.professional h4 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+}
