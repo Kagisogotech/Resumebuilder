@@ -755,6 +755,49 @@ function exportToPDF() {
     html2pdf().from(element).set(options).save();
 }
 
+// ... (your existing code) ...
+
+// Add the DOCX export logic
+document.getElementById('export-docx-btn').addEventListener('click', () => {
+    const element = document.getElementById('resume-preview-container');
+    
+    // Create a complete HTML document string
+    const content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Resume</title>
+            <meta charset="utf-8">
+            <style>
+                /* Include your resume's CSS here to retain styling */
+                .template-container.modern { font-family: 'Helvetica', 'Arial', sans-serif; max-width: 800px; margin: 0 auto; line-height: 1.4; color: #333; }
+                .template-container h1, .template-container h2, .template-container h3, .template-container h4 { margin: 0; padding: 0; }
+                .template-container h1 { font-size: 2.5rem; color: #0077B6; }
+                .template-container h2 { font-size: 1.25rem; }
+                .template-container .section-title { font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid #ccc; padding-bottom: 4px; margin-bottom: 12px; }
+                .template-container .resume-ul li { margin-left: 20px; }
+                /* Add any other critical CSS for formatting */
+            </style>
+        </head>
+        <body>
+            ${element.innerHTML}
+        </body>
+        </html>
+    `;
+
+    const converted = htmlDocx.asBlob(content);
+
+    // Use a temporary link to download the file
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(converted);
+    link.download = 'resume.docx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// ... (your other code) ...
+
 // Function to export the resume as a simple HTML file.
 function exportToHTML() {
     const previewContainer = document.getElementById('resume-preview-container');
