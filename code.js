@@ -89,6 +89,13 @@ function renderInputPanel() {
             <textarea data-field="${field}" class="textarea-field p-2 border border-slate-300 rounded-md h-24 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200">${value}</textarea>
         </div>
     `;
+     // A new helper function for date inputs with calendar
+    const createDateField = (label, value, field) => `
+        <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">${label}</label>
+            <input type="date" value="${value}" data-field="${field}" class="input-field p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200">
+        </div>
+    `;
 
     // Render the appropriate section based on the active state
     let content = '';
@@ -120,32 +127,33 @@ function renderInputPanel() {
                 </div>
             `;
             break;
-        case 'experience':
-            sectionTitle = 'Work Experience';
-            iconName = 'briefcase';
-            content = `
-                ${resumeData.experience.map((job, index) => `
-                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 relative mb-4" data-index="${index}">
-                        <button class="remove-btn absolute top-2 right-2 text-red-500 hover:text-red-700 transition-colors" data-section="experience" data-index="${index}">
-                            &times;
-                        </button>
-                        ${createInputField('Job Title', job.title, 'title')}
-                        ${createInputField('Company', job.company, 'company')}
-                        <div class="flex gap-4">
-                            ${createInputField('Start Date', job.startDate, 'startDate')}
-                            ${createInputField('End Date', job.endDate, 'endDate')}
-                        </div>
-                        ${createTextareaField('Job Description (Key Responsibilities)', job.description, 'description')}
-                        <button class="ai-suggestion-btn flex items-center gap-2 px-4 py-2 mt-2 bg-sky-50 text-sky-700 rounded-full text-sm font-semibold hover:bg-sky-100 transition-colors" data-section="experience" data-index="${index}">
-                            <span data-lucide="lightbulb" class="w-4 h-4"></span> Get AI Suggestions
-                        </button>
-                    </div>
-                `).join('')}
-                <button class="add-btn w-full px-4 py-2 text-sky-600 border-2 border-sky-600 rounded-lg hover:bg-sky-600 hover:text-white transition-colors" data-section="experience">
-                    + Add Experience
+        // ... (inside the switch statement within renderInputPanel)
+case 'experience':
+    sectionTitle = 'Work Experience';
+    iconName = 'briefcase';
+    content = `
+        ${resumeData.experience.map((job, index) => `
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 relative mb-4" data-index="${index}">
+                <button class="remove-btn absolute top-2 right-2 text-red-500 hover:text-red-700 transition-colors" data-section="experience" data-index="${index}">
+                    &times;
                 </button>
-            `;
-            break;
+                ${createInputField('Job Title', job.title, 'title')}
+                ${createInputField('Company', job.company, 'company')}
+                <div class="flex gap-4">
+                    ${createDateField('Start Date', job.startDate, 'startDate')}
+                    ${createDateField('End Date', job.endDate, 'endDate')}
+                </div>
+                ${createTextareaField('Job Description (Key Responsibilities)', job.description, 'description')}
+                <button class="ai-suggestion-btn flex items-center gap-2 px-4 py-2 mt-2 bg-sky-50 text-sky-700 rounded-full text-sm font-semibold hover:bg-sky-100 transition-colors" data-section="experience" data-index="${index}">
+                    <span data-lucide="lightbulb" class="w-4 h-4"></span> Get AI Suggestions
+                </button>
+            </div>
+        `).join('')}
+        <button class="add-btn w-full px-4 py-2 text-sky-600 border-2 border-sky-600 rounded-lg hover:bg-sky-600 hover:text-white transition-colors" data-section="experience">
+            + Add Experience
+        </button>
+    `;
+    break;
         case 'education':
             sectionTitle = 'Education';
             iconName = 'book';
@@ -734,29 +742,17 @@ function exportToPDF() {
     const parent = resumeElement.parentElement; // The preview container
 
     // Temporarily create a new, detached container
-    const tempContainer = document.createElement('div');
-    tempContainer.style.width = '210mm'; // A4 width
-    tempContainer.style.padding = '0';
-    tempContainer.style.margin = '0';
-
-    // Move the resume element to the temporary container to bypass fixed heights
-    tempContainer.appendChild(resumeElement);
-    document.body.appendChild(tempContainer);
+    const element = document.getElementById('resume-preview-container');
 
     const options = {
-        margin: [0, 10, 10, 10], // top, left, bottom, right in millimeters
-        filename: `${state.resumeData.contact.name.replace(/\s/g, '_')}_Resume.pdf`,
+        margin: [10, 10, 10, 10], // top, left, bottom, right
+        filename: 'resume.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, logging: true, dpi: 192, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().from(tempContainer).set(options).save().then(() => {
-        // Move the resume element back to its original parent
-        parent.appendChild(resumeElement);
-        // Clean up the temporary container
-        document.body.removeChild(tempContainer);
-    });
+    html2pdf().from(element).set(options).save();
 }
 
 // Function to export the resume as a simple HTML file.
