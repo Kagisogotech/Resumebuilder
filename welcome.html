@@ -2,31 +2,160 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- The viewport meta tag is critical for responsive design -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLex Resume Builder</title>
+    <title>AI Resume Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.380.0/dist/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-900">
-    <!-- Welcome page -->
-    <div id="welcome-page" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 sm:p-12 rounded-2xl shadow-xl max-w-lg w-full text-center">
-            <h1 class="text-4xl sm:text-5xl font-bold text-sky-700 mb-4 flex items-center justify-center">
-                <img src="Medilex.png" alt="MediLex Logo" class="h-16 w-16 sm:h-24 sm:w-24 inline-block mr-4">
-                MediLex Resume Builder
-            </h1>
-            <p class="text-slate-600 mb-8 text-lg">Your AI-powered tool for creating a perfect resume.</p>
-            <a href="index.html" class="inline-block px-8 py-3 bg-sky-600 text-white font-semibold rounded-full shadow-lg hover:bg-sky-700 transition-colors transform hover:scale-105">
-                Get Started
-            </a>
+<body class="bg-slate-100 text-slate-900 font-inter">
+    <!-- Modals are responsive by design, so no changes needed here. They take
+         up the full width on small screens and a centered box on larger screens. -->
+    <div id="ai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
+            <h3 id="modal-title" class="text-xl font-bold mb-4">AI Suggestion</h3>
+            <p id="modal-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap"></p>
+            <div class="flex justify-end space-x-2">
+                <button id="cancel-suggestion-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Cancel</button>
+                <button id="accept-suggestion-btn" class="px-4 py-2 text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors">Accept</button>
+            </div>
         </div>
     </div>
+
+    <div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
+            <h3 class="text-xl font-bold mb-4 text-red-500">Error</h3>
+            <p id="error-message" class="text-sm text-slate-600 mb-6"></p>
+            <div class="flex justify-end space-x-2">
+                <button id="close-error-modal" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="ats-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
+            <h3 id="ats-modal-title" class="text-xl font-bold mb-4">ATS Compatibility Check</h3>
+            <p id="ats-modal-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap"></p>
+            <div class="flex justify-end space-x-2">
+                <button id="close-ats-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cover-letter-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg">
+            <h3 class="text-xl font-bold mb-4">Generated Cover Letter</h3>
+            <p class="text-sm text-slate-600 mb-4">Below is a suggested cover letter based on your resume. You can edit it directly before copying.</p>
+            <textarea id="cover-letter-content" class="w-full h-80 p-4 border border-slate-300 rounded-lg text-sm text-slate-700 font-serif leading-relaxed focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="close-cover-letter-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Close</button>
+                <button id="copy-cover-letter-btn" class="px-4 py-2 text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ats-input-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg">
+            <h3 class="text-xl font-bold mb-4">ATS Job Description Match</h3>
+            <p class="text-sm text-slate-600 mb-4">Paste the job description you want to match your resume against below.</p>
+            <textarea id="job-description-input" class="w-full h-64 p-4 border border-slate-300 rounded-lg text-sm text-slate-700 font-serif leading-relaxed focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Paste your job description here..."></textarea>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="close-ats-input-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Cancel</button>
+                <button id="run-ats-match-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">Run Match</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ats-results-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg max-h-[80vh] flex flex-col">
+            <h3 id="ats-results-title" class="text-xl font-bold mb-4">ATS Match Report</h3>
+            <div id="ats-results-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap space-y-4 flex-1 overflow-y-auto"></div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button id="close-ats-results-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="py-4 bg-white shadow-md border-b border-slate-200 sm:py-6">
+        <!-- The header will scale down on smaller screens -->
+        <h1 class="text-2xl sm:text-4xl font-bold text-sky-700 text-center flex flex-col sm:flex-row items-center justify-center gap-2">
+            <!-- The logo size is responsive to screen size -->
+            <img src="Medilex.png" alt="MediLex Logo" class="h-12 w-12 sm:h-20 sm:w-20">
+            <span>Smart Resume Builder</span>
+        </h1>
+    </div>
+    
+
+    <!-- The main layout is now fully responsive.
+         On mobile, it's a single column (flex-col by default).
+         On screens medium and up, it becomes a two-column layout (md:flex-row). -->
+    <div class="min-h-screen flex flex-col md:flex-row p-4 md:p-8 gap-4 md:gap-6">
+        <!-- The left side, with input forms and buttons -->
+        <div class="w-full md:w-1/2 lg:w-1/3 flex flex-col gap-4 md:gap-6">
+            <div class="p-4 bg-white rounded-xl shadow-md border border-slate-200">
+                <h2 class="text-lg font-semibold mb-3 text-slate-700">Choose a Template</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="modern-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
+                        <span class="w-full h-6 rounded-md bg-sky-600 bg-opacity-10 mb-1"></span>
+                        <span class="btn-template-name text-xs sm:text-sm">Modern</span>
+                    </button>
+                    <button id="classic-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
+                        <span class="w-full h-6 rounded-md bg-blue-800 bg-opacity-10 mb-1"></span>
+                        <span class="btn-template-name text-xs sm:text-sm">Classic</span>
+                    </button>
+                    <button id="professional-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
+                        <span class="w-full h-6 rounded-md bg-emerald-700 bg-opacity-10 mb-1"></span>
+                        <span class="btn-template-name text-xs sm:text-sm">Professional</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="export-buttons-section" class="p-4 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col items-center gap-4">
+                <h3 class="text-lg font-semibold text-slate-700">Exporting Options</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 w-full">
+                    <button id="basic-ats-check-btn" class="text-xs px-2 py-1.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center">
+                        <span data-lucide="scan-text" class="inline-block w-4 h-4 mr-1"></span> Basic ATS Check
+                    </button>
+                    <button id="ats-job-match-btn" class="text-xs px-2 py-1.5 bg-green-800 text-white rounded-lg font-medium hover:bg-green-900 transition-colors flex items-center justify-center">
+                        <span data-lucide="award" class="inline-block w-4 h-4 mr-1"></span> ATS Job Match
+                    </button>
+                    <button id="generate-cover-letter-btn" class="text-xs px-2 py-1.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center">
+                        <span data-lucide="mail" class="inline-block w-4 h-4 mr-1"></span> Cover Letter
+                    </button>
+                    <button id="export-html-btn" class="text-xs px-2 py-1.5 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors flex items-center justify-center">
+                        <span data-lucide="file-code" class="inline-block w-4 h-4 mr-1"></span> Export HTML
+                    </button>
+                    <button id="export-pdf-btn" class="text-xs px-2 py-1.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center">
+                        <span data-lucide="file-down" class="inline-block w-4 h-4 mr-1"></span> Export PDF
+                    </button>
+                    <button id="export-docx-btn" class="text-xs px-2 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center">
+                        <span data-lucide="file-text" class="inline-block w-4 h-4 mr-1"></span> Export DOCX
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white rounded-xl shadow-md border border-slate-200">
+                <h2 class="text-lg font-semibold mb-3 text-slate-700">Resume Sections</h2>
+                <div id="section-nav" class="flex flex-wrap gap-2">
+                </div>
+            </div>
+            
+            <div id="input-sections" class="flex-1">
+            </div>
+        </div>
+        
+        <!-- The resume preview container is now sticky on larger screens and takes
+             the full width on smaller screens, then fills the remaining space on larger ones. -->
+        <div id="resume-preview-container" class="w-full md:w-1/2 lg:w-2/3 md:h-screen md:sticky md:top-0 overflow-y-auto">
+        </div>
+    </div>
+    
+    <script src="code.js"></script>
 </body>
 </html>
