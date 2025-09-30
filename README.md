@@ -1,48 +1,55 @@
-# Resume Builder
+# Resume Builder App
 
-A single-page resume builder application built with **HTML, CSS, and JavaScript**. This project allows users to create and customize resumes with different templates and AI-powered features, all without a backend server.
+A web application that allows users to create, customize, and download professional resumes through an intuitive interface.  
+The app provides structured input fields for personal details, education, work experience, and skills, then generates a clean and well-formatted resume.
 
----
+## 🚀 Features
+- Enter personal, educational, and professional details
+- Add skills, achievements, and contact information
+- Preview the resume in real-time
+- Download or export the generated resume
+- Clean, responsive design for ease of use
 
-## Project Overview
+## 🛠️ Tech Stack
+- **Frontend:** HTML, CSS, JavaScript *(update if you used React or TypeScript)*  
+- **Deployment:** GitHub Pages  
 
-The Resume Builder is a **client-side application** that uses JavaScript for dynamic rendering and API calls. It leverages third-party libraries for styling, icons, and PDF generation.
+## 📂 Project Structure
+```bash
+.
+├── index.html
+├── welcome.html
+├── style.css
+├── script.js
+└── README.md
+```
+🌐 Live Demo
 
----
+👉 Resume Builder App
 
-## Project Structure
+📸 Screenshots
 
-resume-builder/
-│
-├── index.html           # Main HTML file containing the application structure, modals, and links to stylesheets & scripts
-├── style.css            # Custom CSS (not handled by Tailwind)
-├── code.js              # Primary JavaScript file handling events, state, API calls, and dynamic resume preview rendering
-├── tailwind.config.js   # (Optional) Tailwind CSS configuration file for custom classes or plugins
-│
-├── assets/              # Folder for images, icons, and other static assets
-├── fonts/               # Folder for Google Fonts (Inter)
-└── lib/                 # Third-party libraries (if not using CDN)
+(Add screenshots here for a professional touch, e.g. screenshot.png)
 
 
-## Libraries & Frameworks
+📦 Installation
 
-The application uses the following libraries via **CDN**:
+Clone the repository and run it locally:
+# Clone the repo
+git clone https://github.com/Kagisogotech/Resumebuilder.git
 
-- **Tailwind CSS** – Utility-first CSS framework for rapid UI development  
-- **Lucide Icons** – Collection of high-quality SVG icons  
-- **Google Fonts (Inter)** – Clean, modern font  
-- **html2pdf.js** – Converts HTML content to a downloadable PDF  
+# Navigate into the project folder
+cd Resumebuilder
+Then open welcome.html in your browser.
 
----
-## Setup & Running the Application
+🤝 Contributing
 
-### Method 1: Using a Local Web Server (Recommended)
+Contributions, issues, and feature requests are welcome.
+Feel free to fork this repository and submit a pull request.
 
-This avoids browser security restrictions, especially for API calls.
+📄 License
 
-1. **Install Python**  
-   Download and install Python from [python.org](https://www.python.org/) if not already installed.
+This project is licensed under the MIT License.
+You are free to use, modify, and distribute this project.
 
-2. **Navigate to Project Directory**
-   ```bash
-   cd path/to/resume-builder
+Made with ❤️ by Kagiso
