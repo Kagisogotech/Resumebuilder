@@ -48,13 +48,34 @@
                   window.firebase.firestore);
     }
 
+    /* Defensive on purpose. If js/firebase-config.js fails to parse —
+       the classic being pasting Firebase's ES-module snippet, whose
+       `import` statement is a syntax error in a plain script — then
+       RB.cloudConfigured never gets defined. Calling it blind threw a
+       TypeError during boot and took the whole editor down with it:
+       no CV loaded, no score, blank header. A broken config must cost
+       you cloud sync, never the app. */
+    function configOk() {
+        try {
+            return typeof RB.cloudConfigured === 'function' && RB.cloudConfigured() === true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     function available() {
-        return sdkPresent() && RB.cloudConfigured();
+        return sdkPresent() && configOk();
     }
 
     /* Why cloud is unavailable, in words a user can act on. */
     function unavailableReason() {
-        if (!RB.cloudConfigured()) {
+        if (typeof RB.cloudConfigured !== 'function') {
+            return 'js/firebase-config.js did not load. If you pasted the snippet from the ' +
+                   'Firebase console, remove its "import" and "initializeApp" lines — this app ' +
+                   'loads Firebase as a plain script, so only the config values belong in that ' +
+                   'file, assigned to RB.firebaseConfig. See FIREBASE_SETUP.md.';
+        }
+        if (!configOk()) {
             return 'Cloud accounts are not set up for this copy of the app. ' +
                    'Paste your Firebase config into js/firebase-config.js — see FIREBASE_SETUP.md.';
         }
