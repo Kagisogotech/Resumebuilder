@@ -1,113 +1,443 @@
+/* ============================================================
+   Smart Resume Builder — stylesheet
+   ------------------------------------------------------------
+   Two concerns live here:
+     1. App chrome (small; Tailwind does most of the work)
+     2. The resume document itself — deliberately ATS-safe
+
+   ATS rules baked into the resume styles below:
+     - one single column, never a sidebar or a grid
+     - no tables, no floats, no absolute positioning
+     - no images, icons or glyph decoration inside the document
+     - standard, universally-installed font families only
+     - real headings in a predictable order
+     - plain "•" list markers, plain "|" separators
+   Changing any of those will lower the parse rate, so please
+   don't reintroduce them for looks.
+   ============================================================ */
+
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-/* Base Resume Styles */
-.template-container {
-    padding: 2.5rem;
-    background-color: #fff;
+/* ---------- App chrome ---------- */
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    line-height: 1.5;
-    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
 }
 
-.section-title {
-    font-size: 1.25rem;
+.field-label {
+    font-size: .7rem;
     font-weight: 600;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 2px solid var(--primary-color);
-    color: var(--primary-color);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #64748b;
 }
 
-.resume-ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    font-size: 0.875rem;
+.input-field,
+.textarea-field,
+.select-field {
+    width: 100%;
+    padding: .5rem .625rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .375rem;
+    font-size: .875rem;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.input-field:focus,
+.textarea-field:focus,
+.select-field:focus {
+    outline: none;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, .15);
+}
+
+.textarea-field {
+    min-height: 6rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/* Score ring used by the ATS report */
+.score-ring {
+    --pct: 0;
+    --ring: #0ea5e9;
+    width: 7.5rem;
+    height: 7.5rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background:
+        conic-gradient(var(--ring) calc(var(--pct) * 1%), #e2e8f0 0);
+    position: relative;
+}
+
+.score-ring::before {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.score-ring > * {
+    position: relative;
+}
+
+/* Drag-and-drop upload target */
+.dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: .75rem;
+    transition: border-color .15s, background-color .15s;
+}
+
+.dropzone.is-dragging {
+    border-color: #0284c7;
+    background: #f0f9ff;
+}
+
+/* Small severity chips for the ATS report */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .125rem .5rem;
+    border-radius: 999px;
+    font-size: .6875rem;
+    font-weight: 600;
+}
+
+.chip-pass  { background: #dcfce7; color: #166533; }
+.chip-warn  { background: #fef9c3; color: #854d0e; }
+.chip-fail  { background: #fee2e2; color: #991b1b; }
+
+
+/* ============================================================
+   THE RESUME DOCUMENT
+   ============================================================ */
+
+.resume-doc {
+    /* Defaults; each template overrides the tokens */
+    --primary-color: #111827;
+    --accent-color: #111827;
+    --text-color: #1f2937;
+    --secondary-text-color: #374151;
+    --rule-color: #9ca3af;
+    --heading-size: 11.5pt;
+    --heading-transform: uppercase;
+    --heading-spacing: .08em;
+    --body-size: 10.5pt;
+    --name-size: 20pt;
+
+    /* A4 content width at 96dpi minus 20mm margins */
+    width: 100%;
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.6in 0.65in;
+    background: #fff;
+    border-radius: .5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .08), 0 2px 4px -2px rgba(0, 0, 0, .05);
+    color: var(--text-color);
+    font-size: var(--body-size);
+    line-height: 1.42;
+    /* Never allow a second column to creep in */
+    columns: 1;
+}
+
+/* On a phone the print-scale padding eats most of the column, so
+   pull it in. Only the preview is affected — exports always use the
+   full page geometry, since they are laid out for paper. */
+@media (max-width: 640px) {
+    .resume-doc {
+        padding: 1.1rem 1rem;
+        border-radius: .375rem;
+    }
+}
+
+/* --- Header block: name, target title, one contact line --- */
+
+.r-head {
+    margin-bottom: .85rem;
+    padding-bottom: .6rem;
+    border-bottom: 1.5px solid var(--rule-color);
+}
+
+.r-name {
+    margin: 0 0 .1rem;
+    font-size: var(--name-size);
+    font-weight: 700;
+    letter-spacing: .01em;
+    color: var(--primary-color);
+    line-height: 1.15;
+}
+
+.r-title {
+    margin: 0 0 .35rem;
+    font-size: calc(var(--body-size) + 1.5pt);
+    font-weight: 600;
     color: var(--secondary-text-color);
 }
 
-.resume-ul li {
-    margin-bottom: 0.5rem;
+/* Contact details are plain text separated by pipes — parsers
+   split reliably on "|" and it survives PDF/DOCX/TXT alike. */
+.r-contact {
+    margin: 0;
+    font-size: calc(var(--body-size) - .5pt);
+    color: var(--secondary-text-color);
+    word-spacing: .02em;
 }
 
-/* Default/Modern Template (already in use) */
-.template-container.modern {
-    --primary-color: #0c4a6e; /* Deep Sky Blue */
-    --accent-color: #0ea5e9; /* Sky Blue */
-    --text-color: #1e293b; /* Dark Slate */
-    --secondary-text-color: #475569; /* Slate Gray */
-    font-family: 'Inter', sans-serif;
+.r-contact span:not(:last-child)::after {
+    content: '  |  ';
+    color: var(--rule-color);
+}
+
+/* --- Sections --- */
+
+.r-section {
+    margin-bottom: .8rem;
+}
+
+.r-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    margin: 0 0 .45rem;
+    padding-bottom: .15rem;
+    font-size: var(--heading-size);
+    font-weight: 700;
+    text-transform: var(--heading-transform);
+    letter-spacing: var(--heading-spacing);
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--rule-color);
+}
+
+/* --- One experience / education / project entry --- */
+
+.r-entry {
+    margin-bottom: .6rem;
+    /* Keep an entry together when the browser paginates for print */
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.r-entry:last-child {
+    margin-bottom: 0;
+}
+
+.r-entry-title {
+    margin: 0;
+    font-size: calc(var(--body-size) + .5pt);
+    font-weight: 700;
     color: var(--text-color);
 }
 
-.template-container.modern .section-title {
-    border-bottom: 2px solid var(--accent-color);
+/* Company | Location | Jan 2020 - Present
+   Deliberately on its own line rather than right-aligned:
+   right-aligning dates needs a table or a flex row, and both
+   scramble the reading order in older parsers. */
+.r-entry-meta {
+    margin: 0 0 .25rem;
+    font-size: calc(var(--body-size) - .5pt);
+    color: var(--secondary-text-color);
+    font-weight: 500;
 }
 
-.template-container.modern .resume-ul li::marker {
+.r-entry-meta span:not(:last-child)::after {
+    content: '  |  ';
+    font-weight: 400;
+    color: var(--rule-color);
+}
+
+.resume-ul {
+    margin: .15rem 0 0;
+    padding-left: 1.05rem;
+    list-style-type: disc;
+}
+
+.resume-ul li {
+    margin-bottom: .16rem;
+    color: var(--secondary-text-color);
+}
+
+.resume-ul li::marker {
     color: var(--accent-color);
 }
 
-/* Classic Template */
-.template-container.classic {
-    --primary-color: #1a202c; /* Deep Charcoal */
-    --accent-color: #3b82f6; /* Blue Accent */
-    --text-color: #2d3748; /* Dark Gray */
-    --secondary-text-color: #4a5568; /* Gray */
-    font-family: 'Times New Roman', Times, serif;
+.r-summary {
+    margin: 0;
+    color: var(--secondary-text-color);
+}
+
+/* --- Skills: bold category label + comma-separated list.
+       This is the single most parseable skills layout. --- */
+
+.r-skill-line {
+    margin: 0 0 .18rem;
+    color: var(--secondary-text-color);
+}
+
+.r-skill-line strong {
     color: var(--text-color);
-}
-
-.template-container.classic .section-title {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 1.35rem;
-    border-bottom: 1px solid var(--primary-color);
-    padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.template-container.classic h1 {
-    font-family: Georgia, serif;
-    font-size: 2.5rem;
-}
-
-.template-container.classic h2 {
-    font-family: Georgia, serif;
-}
-
-.template-container.classic .resume-ul {
-    list-style-type: circle;
-}
-
-/* Professional Template */
-.template-container.professional {
-    --primary-color: #1f2937; /* Dark Gray */
-    --accent-color: #0d9488; /* Teal */
-    --text-color: #374151; /* Slate Gray */
-    --secondary-text-color: #6b7280; /* Light Gray */
-    font-family: Georgia, serif;
-    color: var(--text-color);
-    padding: 2.5rem 3.5rem;
-}
-
-.template-container.professional h1 {
-    font-family: 'Inter', sans-serif;
-    color: var(--primary-color);
     font-weight: 700;
 }
 
-.template-container.professional .section-title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    border-bottom: 2px solid var(--accent-color);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    color: var(--primary-color);
+.r-inline-note {
+    color: var(--secondary-text-color);
 }
 
-.template-container.professional h4 {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
+
+/* ============================================================
+   TEMPLATES — colour and type only. Structure never changes,
+   so every template parses identically well.
+   ============================================================ */
+
+/* Professional: centred header, near-black headings, grey rules.
+   The conventional corporate CV layout — still one column, still
+   standard headings, so it parses exactly like the others.
+   Alignment has no effect on text extraction. */
+.resume-doc.professional {
+    --primary-color: #17253f;
+    --accent-color: #334155;
+    --text-color: #111827;
+    --secondary-text-color: #333f55;
+    --rule-color: #94a3b8;
+    --heading-size: 11.5pt;
+    --heading-spacing: .06em;
+    font-family: 'Inter', Calibri, Carlito, Arial, Helvetica, sans-serif;
+}
+
+.resume-doc.professional .r-head {
+    text-align: center;
+    border-bottom-width: 1px;
+}
+
+.resume-doc.professional .r-name {
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: 19pt;
+}
+
+.resume-doc.professional .r-contact {
+    /* Let a long contact line wrap tidily rather than overflow */
+    max-width: 46em;
+    margin: 0 auto;
+}
+
+/* Modern: sans-serif, single restrained accent */
+.resume-doc.modern {
+    --primary-color: #0c4a6e;
+    --accent-color: #0369a1;
+    --text-color: #111827;
+    --secondary-text-color: #374151;
+    --rule-color: #7dd3fc;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Classic: Times, black and white, maximum compatibility */
+.resume-doc.classic {
+    --primary-color: #000;
+    --accent-color: #000;
+    --text-color: #111;
+    --secondary-text-color: #222;
+    --rule-color: #555;
+    --name-size: 21pt;
+    --heading-size: 12pt;
+    --heading-spacing: .06em;
+    font-family: 'Times New Roman', Times, Georgia, serif;
+}
+
+/* Executive: serif body, sans headings, teal rule */
+.resume-doc.executive {
+    --primary-color: #14342c;
+    --accent-color: #0f766e;
+    --text-color: #1f2937;
+    --secondary-text-color: #374151;
+    --rule-color: #5eead4;
+    --name-size: 21pt;
+    font-family: Georgia, 'Times New Roman', serif;
+}
+
+.resume-doc.executive .r-name,
+.resume-doc.executive .section-title,
+.resume-doc.executive .r-entry-title {
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Compact: same structure, tighter leading for dense CVs */
+.resume-doc.compact {
+    --primary-color: #1f2937;
+    --accent-color: #4b5563;
+    --text-color: #111827;
+    --secondary-text-color: #374151;
+    --rule-color: #9ca3af;
+    --body-size: 10pt;
+    --name-size: 18pt;
+    --heading-size: 10.5pt;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.32;
+    padding: .5in .55in;
+}
+
+.resume-doc.compact .r-section { margin-bottom: .6rem; }
+.resume-doc.compact .r-entry   { margin-bottom: .45rem; }
+
+
+/* ============================================================
+   PRINT — "Print / Save as PDF" from the browser produces a
+   real text-layer PDF, so it stays fully ATS-readable.
+   ============================================================ */
+
+@media print {
+    @page {
+        size: A4;
+        margin: 14mm 15mm;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    /* Everything that isn't the resume disappears */
+    body > *:not(#print-root) {
+        display: none !important;
+    }
+
+    #print-root {
+        display: block !important;
+        position: static !important;
+    }
+
+    .resume-doc {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+        font-size: 10.5pt;
+    }
+
+    .r-section,
+    .r-entry {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .section-title {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+}
+
+/* Hidden print container while on screen */
+#print-root {
+    display: none;
 }

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"
+     role="img" aria-labelledby="nene-logo-title">
+  <title id="nene-logo-title">Nene's CV Platform</title>
+
+  <defs>
+    <!-- Silver-to-white sheen, lit from the top right like the reference mark -->
+    <linearGradient id="cvSheen" x1="1" y1="0" x2="0.15" y2="1">
+      <stop offset="0"    stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#F1F3F5"/>
+      <stop offset="0.72" stop-color="#B9BFC6"/>
+      <stop offset="1"    stop-color="#8B9299"/>
+    </linearGradient>
+
+    <!-- Very slight lift out of the flat charcoal tile -->
+    <radialGradient id="tileLift" cx="0.3" cy="0.18" r="1.05">
+      <stop offset="0" stop-color="#33363B"/>
+      <stop offset="1" stop-color="#1B1D20"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="120" height="120" rx="26" fill="url(#tileLift)"/>
+
+  <!-- The C and the V share one fill, so where the V's rising arm
+       crosses the C's opening the two letterforms merge into a
+       single mark rather than reading as two stacked glyphs. -->
+  <g transform="translate(11,10)" fill="url(#cvSheen)">
+
+    <!-- C: thick ring, flat mitred terminals, opening to the right -->
+    <path d="M 58.3 29.9
+             A 30 30 0 1 0 58.3 70.1
+             L 47.9 60.7
+             A 16 16 0 1 1 47.9 39.3
+             Z"/>
+
+    <!-- V: angular chevron, arms cut square at the cap line -->
+    <path d="M 50 22
+             L 72 82
+             L 94 22
+             L 80 22
+             L 72 52
+             L 64 22
+             Z"/>
+  </g>
+</svg>

@@ -2,160 +2,211 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- The viewport meta tag is critical for responsive design -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Resume Builder</title>
+    <title>Nene's CV Platform — Editor</title>
+    <meta name="description" content="Build a CV that clears applicant tracking systems and reads well to a human.">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="apple-touch-icon" href="assets/logo.svg">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.380.0/dist/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.min.js"></script>
+    <!-- lucide is not published on cdnjs; this is the correct UMD build.
+         (The previous jsdelivr path used here, lucide@0.380.0/dist/lucide.min.js,
+         404s — which is why no icons ever appeared.) -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-900 font-inter">
-    <!-- Modals are responsive by design, so no changes needed here. They take
-         up the full width on small screens and a centered box on larger screens. -->
-    <div id="ai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
-            <h3 id="modal-title" class="text-xl font-bold mb-4">AI Suggestion</h3>
-            <p id="modal-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap"></p>
-            <div class="flex justify-end space-x-2">
-                <button id="cancel-suggestion-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Cancel</button>
-                <button id="accept-suggestion-btn" class="px-4 py-2 text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors">Accept</button>
-            </div>
-        </div>
-    </div>
+<body class="bg-slate-100 text-slate-900">
 
-    <div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
-            <h3 class="text-xl font-bold mb-4 text-red-500">Error</h3>
-            <p id="error-message" class="text-sm text-slate-600 mb-6"></p>
-            <div class="flex justify-end space-x-2">
-                <button id="close-error-modal" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Close</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="ats-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full max-w-sm mx-auto rounded-xl shadow-lg">
-            <h3 id="ats-modal-title" class="text-xl font-bold mb-4">ATS Compatibility Check</h3>
-            <p id="ats-modal-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap"></p>
-            <div class="flex justify-end space-x-2">
-                <button id="close-ats-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">OK</button>
-            </div>
-        </div>
-    </div>
+    <!-- ===================== HEADER ===================== -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-[1600px] mx-auto px-3 sm:px-5 py-2.5 flex items-center gap-3 sm:gap-4">
 
-    <div id="cover-letter-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg">
-            <h3 class="text-xl font-bold mb-4">Generated Cover Letter</h3>
-            <p class="text-sm text-slate-600 mb-4">Below is a suggested cover letter based on your resume. You can edit it directly before copying.</p>
-            <textarea id="cover-letter-content" class="w-full h-80 p-4 border border-slate-300 rounded-lg text-sm text-slate-700 font-serif leading-relaxed focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
-            <div class="flex justify-end space-x-2 mt-4">
-                <button id="close-cover-letter-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Close</button>
-                <button id="copy-cover-letter-btn" class="px-4 py-2 text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors">Copy to Clipboard</button>
+            <!-- Brand lockup -->
+            <a href="index.html" class="flex items-center gap-2.5 shrink-0 group">
+                <svg viewBox="0 0 120 120" class="w-9 h-9 sm:w-10 sm:h-10 rounded-[9px] shrink-0"
+                     role="img" aria-label="Nene's CV Platform">
+                    <defs>
+                        <linearGradient id="hdrSheen" x1="1" y1="0" x2="0.15" y2="1">
+                            <stop offset="0" stop-color="#FFFFFF"/>
+                            <stop offset="0.42" stop-color="#F1F3F5"/>
+                            <stop offset="0.72" stop-color="#B9BFC6"/>
+                            <stop offset="1" stop-color="#8B9299"/>
+                        </linearGradient>
+                        <radialGradient id="hdrTile" cx="0.3" cy="0.18" r="1.05">
+                            <stop offset="0" stop-color="#33363B"/>
+                            <stop offset="1" stop-color="#1B1D20"/>
+                        </radialGradient>
+                    </defs>
+                    <rect width="120" height="120" rx="26" fill="url(#hdrTile)"/>
+                    <g transform="translate(11,10)" fill="url(#hdrSheen)">
+                        <path d="M 58.3 29.9 A 30 30 0 1 0 58.3 70.1 L 47.9 60.7 A 16 16 0 1 1 47.9 39.3 Z"/>
+                        <path d="M 50 22 L 72 82 L 94 22 L 80 22 L 72 52 L 64 22 Z"/>
+                    </g>
+                </svg>
+                <span class="hidden sm:block leading-tight">
+                    <span class="block text-sm font-bold text-slate-800 group-hover:text-sky-700 transition-colors">Nene's CV Platform</span>
+                    <span class="block text-[11px] text-slate-400">Past the filter, into the room.</span>
+                </span>
+            </a>
+
+            <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+
+            <!-- Which CV is open -->
+            <div id="cv-identity" class="min-w-0 hidden md:block"></div>
+
+            <div class="grow"></div>
+
+            <span id="save-status" class="text-[11px] text-slate-400 hidden sm:block"></span>
+            <span id="page-estimate" class="text-[11px] text-slate-400 hidden lg:block"></span>
+
+            <button id="score-pill"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs
+                           font-semibold bg-sky-50 text-sky-700 border-sky-200">
+                ATS —
+            </button>
+
+            <button data-action="profile"
+                    class="shrink-0 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                    title="Profile">
+                <span data-lucide="user-round" class="w-4.5 h-4.5 w-[18px] h-[18px]"></span>
+            </button>
+        </div>
+
+        <!-- ===================== ACTION BAR ===================== -->
+        <div class="border-t border-slate-100 bg-slate-50/80">
+            <div class="max-w-[1600px] mx-auto px-3 sm:px-5 py-2 flex items-center gap-1.5 overflow-x-auto">
+
+                <button data-action="upload"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-slate-800 text-white text-xs font-medium hover:bg-slate-900">
+                    <span data-lucide="upload" class="w-3.5 h-3.5"></span>Upload a CV
+                </button>
+
+                <button data-action="revamp"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-sky-600 text-white text-xs font-medium hover:bg-sky-700">
+                    <span data-lucide="wand-2" class="w-3.5 h-3.5"></span>Revamp
+                </button>
+
+                <div class="h-5 w-px bg-slate-200 mx-1 shrink-0"></div>
+
+                <button data-action="ats-report"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-white border border-slate-200 text-slate-700 text-xs font-medium
+                               hover:bg-slate-100">
+                    <span data-lucide="scan-text" class="w-3.5 h-3.5"></span>ATS report
+                </button>
+
+                <button data-action="job-match"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-white border border-slate-200 text-slate-700 text-xs font-medium
+                               hover:bg-slate-100">
+                    <span data-lucide="target" class="w-3.5 h-3.5"></span>Job match
+                </button>
+
+                <button data-action="cover-letter"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-white border border-slate-200 text-slate-700 text-xs font-medium
+                               hover:bg-slate-100">
+                    <span data-lucide="mail" class="w-3.5 h-3.5"></span>Cover letter
+                </button>
+
+                <div class="h-5 w-px bg-slate-200 mx-1 shrink-0"></div>
+
+                <button data-action="my-cvs"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-white border border-slate-200 text-slate-700 text-xs font-medium
+                               hover:bg-slate-100">
+                    <span data-lucide="folder" class="w-3.5 h-3.5"></span>My CVs
+                </button>
+
+                <button data-action="export"
+                        class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700">
+                    <span data-lucide="download" class="w-3.5 h-3.5"></span>Export
+                </button>
+
+                <div class="grow"></div>
+
+                <button data-action="load-sample"
+                        class="shrink-0 px-2.5 py-1.5 rounded-lg text-slate-400 text-xs
+                               font-medium hover:bg-slate-100 hover:text-slate-600">
+                    Load example
+                </button>
+                <button data-action="clear"
+                        class="shrink-0 px-2.5 py-1.5 rounded-lg text-slate-400 text-xs
+                               font-medium hover:bg-red-50 hover:text-red-600">
+                    Clear
+                </button>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div id="ats-input-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg">
-            <h3 class="text-xl font-bold mb-4">ATS Job Description Match</h3>
-            <p class="text-sm text-slate-600 mb-4">Paste the job description you want to match your resume against below.</p>
-            <textarea id="job-description-input" class="w-full h-64 p-4 border border-slate-300 rounded-lg text-sm text-slate-700 font-serif leading-relaxed focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Paste your job description here..."></textarea>
-            <div class="flex justify-end space-x-2 mt-4">
-                <button id="close-ats-input-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">Cancel</button>
-                <button id="run-ats-match-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">Run Match</button>
-            </div>
+    <!-- ===================== MAIN ===================== -->
+    <main class="max-w-[1600px] mx-auto px-3 sm:px-5 py-4 sm:py-5
+                 flex flex-col lg:flex-row gap-4 lg:gap-5 items-start">
+
+        <!-- Editor column -->
+        <div class="w-full lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col gap-4">
+
+            <section class="card p-4">
+                <h2 class="text-sm font-semibold text-slate-700 mb-1">Template</h2>
+                <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    All four are single-column and parse identically well. Pick on looks — the
+                    structure underneath does not change.
+                </p>
+                <div id="template-picker" class="grid grid-cols-2 gap-2"></div>
+            </section>
+
+            <section class="card p-4">
+                <h2 class="text-sm font-semibold text-slate-700 mb-3">Sections</h2>
+                <div id="section-nav" class="flex flex-wrap gap-1.5"></div>
+            </section>
+
+            <div id="input-sections"></div>
+
+            <p class="text-[11px] text-slate-400 leading-relaxed px-1 pb-4">
+                Saved in this browser as you type. Nothing is sent anywhere — the CV reader, the
+                ATS scoring and every export all run on this device. Download a backup from
+                <strong>My CVs</strong> to move your work to another machine.
+            </p>
         </div>
-    </div>
 
-    <div id="ats-results-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
-        <div class="relative p-6 bg-white w-full sm:w-1/2 mx-auto rounded-xl shadow-lg max-h-[80vh] flex flex-col">
-            <h3 id="ats-results-title" class="text-xl font-bold mb-4">ATS Match Report</h3>
-            <div id="ats-results-content" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap space-y-4 flex-1 overflow-y-auto"></div>
-            <div class="flex justify-end space-x-2 mt-4">
-                <button id="close-ats-results-btn" class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">OK</button>
+        <!-- Preview column -->
+        <div class="w-full grow min-w-0">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                    Live preview
+                </h2>
+                <span class="text-[11px] text-slate-400">
+                    What you see here is exactly what an ATS reads
+                </span>
             </div>
+            <div id="resume-preview-container" class="lg:sticky lg:top-[104px]"></div>
         </div>
-    </div>
+    </main>
 
-    <div class="py-4 bg-white shadow-md border-b border-slate-200 sm:py-6">
-        <!-- The header will scale down on smaller screens -->
-        <h1 class="text-2xl sm:text-4xl font-bold text-sky-700 text-center flex flex-col sm:flex-row items-center justify-center gap-2">
-            <!-- The logo size is responsive to screen size -->
-            <img src="Medilex.png" alt="MediLex Logo" class="h-12 w-12 sm:h-20 sm:w-20">
-            <span>Smart Resume Builder</span>
-        </h1>
-    </div>
-    
+    <!-- Print target: populated on demand, hidden on screen -->
+    <div id="print-root"></div>
 
-    <!-- The main layout is now fully responsive.
-         On mobile, it's a single column (flex-col by default).
-         On screens medium and up, it becomes a two-column layout (md:flex-row). -->
-    <div class="min-h-screen flex flex-col md:flex-row p-4 md:p-8 gap-4 md:gap-6">
-        <!-- The left side, with input forms and buttons -->
-        <div class="w-full md:w-1/2 lg:w-1/3 flex flex-col gap-4 md:gap-6">
-            <div class="p-4 bg-white rounded-xl shadow-md border border-slate-200">
-                <h2 class="text-lg font-semibold mb-3 text-slate-700">Choose a Template</h2>
-                <div class="grid grid-cols-3 gap-2">
-                    <button id="modern-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
-                        <span class="w-full h-6 rounded-md bg-sky-600 bg-opacity-10 mb-1"></span>
-                        <span class="btn-template-name text-xs sm:text-sm">Modern</span>
-                    </button>
-                    <button id="classic-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
-                        <span class="w-full h-6 rounded-md bg-blue-800 bg-opacity-10 mb-1"></span>
-                        <span class="btn-template-name text-xs sm:text-sm">Classic</span>
-                    </button>
-                    <button id="professional-btn" class="template-btn flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200">
-                        <span class="w-full h-6 rounded-md bg-emerald-700 bg-opacity-10 mb-1"></span>
-                        <span class="btn-template-name text-xs sm:text-sm">Professional</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div id="export-buttons-section" class="p-4 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col items-center gap-4">
-                <h3 class="text-lg font-semibold text-slate-700">Exporting Options</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 w-full">
-                    <button id="basic-ats-check-btn" class="text-xs px-2 py-1.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center">
-                        <span data-lucide="scan-text" class="inline-block w-4 h-4 mr-1"></span> Basic ATS Check
-                    </button>
-                    <button id="ats-job-match-btn" class="text-xs px-2 py-1.5 bg-green-800 text-white rounded-lg font-medium hover:bg-green-900 transition-colors flex items-center justify-center">
-                        <span data-lucide="award" class="inline-block w-4 h-4 mr-1"></span> ATS Job Match
-                    </button>
-                    <button id="generate-cover-letter-btn" class="text-xs px-2 py-1.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center">
-                        <span data-lucide="mail" class="inline-block w-4 h-4 mr-1"></span> Cover Letter
-                    </button>
-                    <button id="export-html-btn" class="text-xs px-2 py-1.5 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors flex items-center justify-center">
-                        <span data-lucide="file-code" class="inline-block w-4 h-4 mr-1"></span> Export HTML
-                    </button>
-                    <button id="export-pdf-btn" class="text-xs px-2 py-1.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center">
-                        <span data-lucide="file-down" class="inline-block w-4 h-4 mr-1"></span> Export PDF
-                    </button>
-                    <button id="export-docx-btn" class="text-xs px-2 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center">
-                        <span data-lucide="file-text" class="inline-block w-4 h-4 mr-1"></span> Export DOCX
-                    </button>
-                </div>
-            </div>
+    <!-- Layers -->
+    <div id="modal-layer"></div>
+    <div id="toast-layer"
+         class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 items-end pointer-events-none"></div>
 
-            <div class="p-4 bg-white rounded-xl shadow-md border border-slate-200">
-                <h2 class="text-lg font-semibold mb-3 text-slate-700">Resume Sections</h2>
-                <div id="section-nav" class="flex flex-wrap gap-2">
-                </div>
-            </div>
-            
-            <div id="input-sections" class="flex-1">
-            </div>
-        </div>
-        
-        <!-- The resume preview container is now sticky on larger screens and takes
-             the full width on smaller screens, then fills the remaining space on larger ones. -->
-        <div id="resume-preview-container" class="w-full md:w-1/2 lg:w-2/3 md:h-screen md:sticky md:top-0 overflow-y-auto">
-        </div>
-    </div>
-    
+    <!-- Application modules, in dependency order -->
+    <script src="js/util.js"></script>
+    <script src="js/model.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/ats.js"></script>
+    <script src="js/parse.js"></script>
+    <script src="js/revamp.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/exporters.js"></script>
     <script src="code.js"></script>
 </body>
 </html>
