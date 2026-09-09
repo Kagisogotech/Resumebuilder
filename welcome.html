@@ -69,11 +69,9 @@
                 ATS —
             </button>
 
-            <button data-action="profile"
-                    class="shrink-0 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                    title="Profile">
-                <span data-lucide="user-round" class="w-4.5 h-4.5 w-[18px] h-[18px]"></span>
-            </button>
+            <!-- Filled by renderAuthSlot(): a "Sign in" button for
+                 guests, or the account avatar once signed in. -->
+            <div id="auth-slot" class="shrink-0"></div>
         </div>
 
         <!-- ===================== ACTION BAR ===================== -->
@@ -198,9 +196,20 @@
     <div id="toast-layer"
          class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 items-end pointer-events-none"></div>
 
+    <!-- Firebase (optional).
+         Compat builds, so they work as plain scripts with no bundler.
+         If cloud accounts are not set up, these still load but do
+         nothing: js/firebase-config.js is blank and the app runs in
+         local-only mode. See FIREBASE_SETUP.md. -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
     <!-- Application modules, in dependency order -->
     <script src="js/util.js"></script>
     <script src="js/model.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/store-cloud.js"></script>
     <script src="js/store.js"></script>
     <script src="js/ats.js"></script>
     <script src="js/parse.js"></script>

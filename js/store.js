@@ -38,9 +38,22 @@
 
     var PBKDF2_ITERATIONS = 150000;
 
-    var driver = null;      // chosen at init()
+    var driver = null;      // local driver, chosen at init()
     var driverName = '';
-    var session = null;     // { username }
+    var session = null;     // { username } for local PIN profiles
+    var cloudUser = null;   // set when a Firebase account is signed in
+
+    /* Which driver reads and writes CVs right now. Signing in to a
+       cloud account switches the whole app over without any other
+       module knowing. */
+    function activeDriver() {
+        if (cloudUser && RB.cloud && RB.cloud.available()) return RB.cloud.driver;
+        return driver;
+    }
+
+    function mode() {
+        return cloudUser ? 'cloud' : 'local';
+    }
 
     /* ============================================================
        DRIVER CONTRACT
@@ -334,13 +347,35 @@
                 });
             })
             .then(function () {
-                // Verify the signed-in user still exists on this device.
+                // Verify the signed-in local profile still exists here.
                 if (!session || !session.username) return;
                 return driver.getUser(session.username).then(function (user) {
                     if (!user) { session = null; persistSession(); }
                 });
             })
-            .then(function () { return { driver: driverName }; });
+            .then(function () {
+                // Start Firebase if it is configured. Never fatal: the
+                // app must keep working locally when cloud is absent.
+                if (!cloudAvailable()) return;
+                return RB.cloud.init().catch(function () {});
+            })
+            .then(function () {
+                return {
+                    driver: driverName,
+                    cloudAvailable: cloudAvailable(),
+                    cloudConfigured: !!(RB.cloudConfigured && RB.cloudConfigured())
+                };
+            });
+    }
+
+    /* Register for Firebase session changes. Fires once with the
+       restored session on page load, then on every sign-in/out. */
+    function watchCloudAuth(callback) {
+        if (!cloudAvailable()) { callback(null); return function () {}; }
+        return RB.cloud.auth.onAuthChanged(function (user) {
+            setCloudUser(user);
+            callback(user);
+        });
     }
 
     function normaliseUsername(name) {
@@ -424,6 +459,8 @@
     }
 
     function currentUser() {
+        // A cloud account outranks a local profile.
+        if (cloudUser) return Promise.resolve(cloudUser);
         if (!session || !session.username) return Promise.resolve(null);
         return driver.getUser(session.username).then(function (user) {
             return user ? publicUser(user) : null;
@@ -431,11 +468,16 @@
     }
 
     function isSignedIn() {
-        return !!(session && session.username);
+        return !!cloudUser || !!(session && session.username);
     }
 
+    /* The key under which CVs are filed. In cloud mode Firestore
+       already scopes documents by uid, but the field is still set so
+       a downloaded backup records who it belonged to. */
     function owner() {
-        return isSignedIn() ? session.username : GUEST;
+        if (cloudUser) return cloudUser.uid;
+        if (session && session.username) return session.username;
+        return GUEST;
     }
 
     function publicUser(user) {
@@ -490,13 +532,13 @@
     /* ---------- saved CVs ---------- */
 
     function listResumes() {
-        return driver.resumesByOwner(owner()).then(function (list) {
+        return activeDriver().resumesByOwner(owner()).then(function (list) {
             return list.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
         });
     }
 
     function getResume(id) {
-        return driver.getResume(id);
+        return activeDriver().getResume(id);
     }
 
     function createResume(name, data, template) {
@@ -510,33 +552,34 @@
             createdAt: now,
             updatedAt: now
         };
-        return driver.putResume(record).then(function () { return record; });
+        return activeDriver().putResume(record).then(function () { return record; });
     }
 
     function updateResume(id, patch) {
-        return driver.getResume(id).then(function (record) {
+        var d = activeDriver();
+        return d.getResume(id).then(function (record) {
             if (!record) throw new Error('That CV no longer exists.');
             Object.keys(patch).forEach(function (k) { record[k] = patch[k]; });
             record.updatedAt = Date.now();
-            return driver.putResume(record).then(function () { return record; });
+            return d.putResume(record).then(function () { return record; });
         });
     }
 
     function duplicateResume(id) {
-        return driver.getResume(id).then(function (record) {
+        return activeDriver().getResume(id).then(function (record) {
             if (!record) throw new Error('That CV no longer exists.');
             return createResume(record.name + ' (copy)', u.deepClone(record.data), record.template);
         });
     }
 
     function deleteResume(id) {
-        return driver.deleteResume(id);
+        return activeDriver().deleteResume(id);
     }
 
-    /* Move guest-owned CVs onto a profile at first sign-in, so
+    /* Move guest-owned CVs onto a local profile at first sign-in, so
        work done before making an account isn't stranded. */
     function claimGuestResumes() {
-        if (!isSignedIn()) return Promise.resolve(0);
+        if (!session || !session.username) return Promise.resolve(0);
         var target = session.username;
         return driver.resumesByOwner(GUEST).then(function (list) {
             if (!list.length) return 0;
@@ -545,6 +588,79 @@
                 r.updatedAt = Date.now();
                 return driver.putResume(r);
             })).then(function () { return list.length; });
+        });
+    }
+
+    /* ------------------------------------------------------------
+       CLOUD MODE
+       ------------------------------------------------------------ */
+
+    function cloudAvailable() {
+        return !!(RB.cloud && RB.cloud.available());
+    }
+
+    /* Called by the auth listener whenever the Firebase session
+       changes — including the silent restore on page load. */
+    function setCloudUser(user) {
+        cloudUser = user || null;
+    }
+
+    function currentCloudUser() {
+        return cloudUser;
+    }
+
+    /* Everything held locally, across the guest bucket and every
+       local PIN profile, ready to be copied into an account. */
+    function localResumesForUpload() {
+        if (!driver) return Promise.resolve([]);
+        return driver.allUsers().then(function (users) {
+            var owners = [GUEST].concat(users.map(function (x) { return x.username; }));
+            return Promise.all(owners.map(function (o) {
+                return driver.resumesByOwner(o).catch(function () { return []; });
+            }));
+        }).then(function (lists) {
+            return lists.reduce(function (acc, l) { return acc.concat(l); }, []);
+        }).catch(function () { return []; });
+    }
+
+    /* Copy local CVs into the signed-in account. Deliberately a copy,
+       not a move: if the upload half-fails, or the user signed in on
+       someone else's machine by mistake, the originals are still here.
+       Duplicate names are skipped so signing in twice does not
+       produce three copies of everything. */
+    function uploadLocalResumes() {
+        if (!cloudUser) return Promise.reject(new Error('Not signed in to an account.'));
+
+        return Promise.all([localResumesForUpload(), listResumes()])
+            .then(function (both) {
+                var local = both[0];
+                var existingNames = {};
+                both[1].forEach(function (r) {
+                    existingNames[u.trim(r.name).toLowerCase()] = true;
+                });
+
+                var toCopy = local.filter(function (r) {
+                    return !RB.model.isEmptyResume(RB.model.migrate(r.data)) &&
+                           !existingNames[u.trim(r.name).toLowerCase()];
+                });
+
+                if (!toCopy.length) return { copied: 0, skipped: local.length };
+
+                return toCopy.reduce(function (chain, r) {
+                    return chain.then(function () {
+                        return createResume(r.name, RB.model.migrate(r.data), r.template);
+                    });
+                }, Promise.resolve()).then(function () {
+                    return { copied: toCopy.length, skipped: local.length - toCopy.length };
+                });
+            });
+    }
+
+    function countLocalResumes() {
+        return localResumesForUpload().then(function (list) {
+            return list.filter(function (r) {
+                return !RB.model.isEmptyResume(RB.model.migrate(r.data));
+            }).length;
         });
     }
 
@@ -590,6 +706,10 @@
 
     function importLegacyIfPresent() {
         var raw, appState;
+        // Only ever pull the old localStorage CV into local storage —
+        // silently uploading it to someone's cloud account would be
+        // a surprise, and the upload flow is explicit and opt-in.
+        if (cloudUser) return Promise.resolve(null);
         try {
             if (localStorage.getItem(LEGACY_FLAG)) return Promise.resolve(null);
             raw = localStorage.getItem('resumeData');
@@ -629,7 +749,16 @@
     RB.store = {
         GUEST: GUEST,
         init: init,
-        driverName: function () { return driverName; },
+        driverName: function () { return activeDriver() ? activeDriver().name : ''; },
+        localDriverName: function () { return driverName; },
+        mode: mode,
+
+        /* cloud */
+        cloudAvailable: cloudAvailable,
+        watchCloudAuth: watchCloudAuth,
+        currentCloudUser: currentCloudUser,
+        uploadLocalResumes: uploadLocalResumes,
+        countLocalResumes: countLocalResumes,
         validatePin: validatePin,
         listProfiles: listProfiles,
         createProfile: createProfile,

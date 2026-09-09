@@ -98,23 +98,42 @@ categories as bold-label comma lists, which is the most parseable skills layout 
 
 ## Accounts, storage and privacy — the honest version
 
-**No login is required.** Open the app and start typing; work saves to your browser
-straight away. Creating a profile is optional and only groups your CVs under a name.
+**No login is required.** Open the app and start typing. Signing in is opt-in, and the
+only thing it changes is *where your CVs are stored* — which is worth stating precisely
+rather than burying.
 
-Storage is **local to your browser on your device** (IndexedDB, falling back to
-localStorage where a browser blocks IndexedDB on `file://` origins). Nothing is uploaded:
-reading your CV, scoring it, rewriting it and generating every export all happen in the tab.
+### Without an account (the default)
 
-The trade-offs, stated plainly:
+CVs live in this browser on this device, in IndexedDB (falling back to localStorage where
+a browser blocks IndexedDB on `file://` origins). Nothing is uploaded: reading your CV,
+scoring it, rewriting it and generating every export all happen in the tab.
 
 - Clearing your browser data **deletes your CVs**. Download a backup from **My CVs**.
-- CVs do **not** sync to your phone or another computer.
-- The PIN separates people sharing a computer. It is PBKDF2-stretched and never stored in
-  plain text, but it is **not encryption** — anyone with developer tools on your machine
-  can read the stored records. Keep genuinely sensitive details out of CV fields.
+- CVs do **not** reach your phone or another computer.
+- The optional local PIN separates people sharing a computer. It is PBKDF2-stretched and
+  never stored in plain text, but it is **not encryption** — anyone with developer tools
+  on that machine can read the stored records.
 
-Swapping in real cloud accounts means writing one more storage driver against the nine
-methods documented at the top of `js/store.js`; nothing else needs to change.
+### With an account
+
+Email/password or Google sign-in via **Firebase Auth**, with CVs in **Cloud Firestore** so
+they follow you across devices and survive a wiped browser. Real password reset by email,
+and offline editing that syncs when you reconnect.
+
+The honest trade: your CVs now sit on Google's servers rather than only on your machine.
+Only you can read them — [`firestore.rules`](firestore.rules) restricts every document to
+the account that owns it, and denies everything else — but it is no longer purely local.
+Deleting your account deletes its CVs with it, in the same operation.
+
+Cloud accounts are **off until configured**. With `js/firebase-config.js` blank the app
+runs local-only and never contacts Firebase. See **[FIREBASE_SETUP.md](FIREBASE_SETUP.md)**.
+
+> The Firebase config committed in this repo is *not* a secret. Google designs it to ship
+> in public client code — the `apiKey` is a project identifier, not a credential. Your data
+> is protected by the security rules, which is why deploying them is not optional.
+
+Either way: a CV is not a secret document, but it carries your name, address and phone
+number. Keep ID numbers, banking details and anything genuinely sensitive out of it.
 
 ---
 

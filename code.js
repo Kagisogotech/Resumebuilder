@@ -674,16 +674,63 @@
                 '<span>' +
                     '<span class="block text-sm font-medium text-slate-700 leading-tight">' +
                         u.esc(state.recordName) + '</span>' +
-                    '<span class="block text-[11px] text-slate-400 leading-tight">' +
-                        (state.user
-                            ? u.esc(state.user.displayName) + "'s CVs"
-                            : 'Not signed in — saved to this browser') +
-                    '</span>' +
+                    '<span class="block text-[11px] leading-tight ' +
+                        (state.user && state.user.cloud ? 'text-emerald-600' : 'text-slate-400') +
+                        '">' + u.esc(identityLine()) + '</span>' +
                 '</span>' +
                 '<span data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-300 ' +
                     'group-hover:text-slate-500"></span>' +
             '</button>';
         refreshIcons(el);
+        renderAuthSlot();
+    }
+
+    /* The header's account control. Guests get an explicit "Sign in"
+       button rather than a bare icon: the whole benefit of an account
+       is invisible otherwise, and this is the one place to surface it. */
+    function renderAuthSlot() {
+        var el = u.$('#auth-slot');
+        if (!el) return;
+
+        var user = state.user;
+
+        if (user && user.cloud) {
+            var initials = (user.displayName || user.email || '?')
+                .replace(/[^A-Za-z0-9]/g, ' ').trim().split(/\s+/)
+                .map(function (w) { return w.charAt(0); })
+                .slice(0, 2).join('').toUpperCase() || '?';
+            el.innerHTML =
+                '<button data-action="profile" title="' + u.escAttr(user.email || '') + '" ' +
+                    'class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 text-xs ' +
+                    'font-bold grid place-items-center hover:bg-emerald-200 transition-colors">' +
+                    u.esc(initials) + '</button>';
+        } else if (store.cloudAvailable()) {
+            el.innerHTML =
+                '<button data-action="profile" class="inline-flex items-center gap-1.5 px-3 py-1.5 ' +
+                    'rounded-lg bg-slate-800 text-white text-xs font-medium hover:bg-slate-900">' +
+                    '<span data-lucide="cloud" class="w-3.5 h-3.5"></span>Sign in</button>';
+        } else {
+            el.innerHTML =
+                '<button data-action="profile" title="Profile" ' +
+                    'class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800">' +
+                    '<span data-lucide="user-round" class="w-[18px] h-[18px]"></span></button>';
+        }
+        refreshIcons(el);
+    }
+
+    /* One line telling the user exactly where this CV is stored —
+       the difference between "synced" and "this browser only" is the
+       difference between losing your work and not. */
+    function identityLine() {
+        if (state.user && state.user.cloud) {
+            return 'Synced · ' + (state.user.email || state.user.displayName);
+        }
+        if (state.user) {
+            return state.user.displayName + ' · this browser only';
+        }
+        return store.cloudAvailable()
+            ? 'Not signed in — this browser only'
+            : 'Saved to this browser';
     }
 
     function renderAll() {
@@ -1239,8 +1286,353 @@
        ============================================================ */
 
     function openProfileModal() {
+        // Cloud accounts, when the project is configured, otherwise
+        // the local PIN profiles.
+        if (store.cloudAvailable()) {
+            return store.currentCloudUser()
+                ? openCloudAccountModal()
+                : openCloudSignInModal();
+        }
         if (store.isSignedIn()) return openSignedInProfile();
         return openSignInModal();
+    }
+
+    /* ============================================================
+       CLOUD ACCOUNTS
+       ============================================================ */
+
+    var CLOUD_STORAGE_NOTE = 'Signing in stores your CVs on Google\'s servers (Firebase) so ' +
+        'they reach your other devices. That is a real change from guest mode, where they never ' +
+        'leave this browser. Nothing is shared with anyone else, and you can delete your ' +
+        'account and all its CVs at any time.';
+
+    function openCloudSignInModal(startMode) {
+        var m = openModal({
+            title: 'Sign in',
+            subtitle: 'Keep your CVs on every device you use.',
+            size: 'sm',
+            body:
+                '<div class="flex gap-2 mb-4">' +
+                    '<button data-tab="signin" class="px-3 py-1.5 text-xs font-medium rounded-lg ' +
+                        'bg-sky-600 text-white">Sign in</button>' +
+                    '<button data-tab="signup" class="px-3 py-1.5 text-xs font-medium rounded-lg ' +
+                        'bg-slate-100 text-slate-600 hover:bg-slate-200">Create account</button>' +
+                '</div>' +
+                '<div id="cloud-form"></div>' +
+                '<div class="relative my-4">' +
+                    '<div class="border-t border-slate-200"></div>' +
+                    '<span class="absolute inset-0 -top-2 flex justify-center">' +
+                        '<span class="bg-white px-2 text-[11px] text-slate-400">or</span>' +
+                    '</span>' +
+                '</div>' +
+                '<button data-google class="w-full px-4 py-2 text-sm rounded-lg border ' +
+                    'border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center ' +
+                    'justify-center gap-2 font-medium">' +
+                    '<svg class="w-4 h-4" viewBox="0 0 48 48" aria-hidden="true">' +
+                        '<path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.8-6.8C35.6 2.4 30.1 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z"/>' +
+                        '<path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-2.8-.4-4.1H24v8.4h12.5c-.3 2.1-1.6 5.2-4.6 7.3l7.7 6c4.5-4.2 6.5-10.3 6.5-17.6z"/>' +
+                        '<path fill="#FBBC05" d="M10.5 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.9-6.2C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.2z"/>' +
+                        '<path fill="#34A853" d="M24 48c6.1 0 11.3-2 15.1-5.5l-7.7-6c-2.1 1.4-4.8 2.3-7.4 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.2C6.5 42.6 14.6 48 24 48z"/>' +
+                    '</svg>' +
+                    'Continue with Google</button>' +
+                '<button data-guest class="w-full mt-2 px-4 py-2 text-sm rounded-lg ' +
+                    'text-slate-500 hover:bg-slate-100">Continue without an account</button>' +
+                '<p class="text-[11px] text-slate-400 leading-relaxed mt-4">' +
+                    u.esc(CLOUD_STORAGE_NOTE) + '</p>'
+        });
+
+        var mode = startMode || 'signin';
+
+        function setTab(next) {
+            mode = next;
+            u.$$('[data-tab]', m.panel).forEach(function (b) {
+                var on = b.dataset.tab === mode;
+                b.className = 'px-3 py-1.5 text-xs font-medium rounded-lg ' +
+                    (on ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200');
+            });
+            renderForm();
+        }
+
+        function renderForm() {
+            var host = u.$('#cloud-form', m.panel);
+            if (mode === 'signin') {
+                host.innerHTML =
+                    '<div class="space-y-3">' +
+                        '<div><label class="field-label block mb-1">Email</label>' +
+                        '<input id="cf-email" data-autofocus type="email" class="input-field" ' +
+                            'autocomplete="username"></div>' +
+                        '<div><label class="field-label block mb-1">Password</label>' +
+                        '<input id="cf-pass" type="password" class="input-field" ' +
+                            'autocomplete="current-password"></div>' +
+                        '<button data-do="signin" class="w-full px-4 py-2 text-sm rounded-lg ' +
+                            'bg-sky-600 text-white hover:bg-sky-700">Sign in</button>' +
+                        '<button data-forgot class="w-full text-xs text-sky-700 hover:underline">' +
+                            'Forgot your password?</button>' +
+                    '</div>';
+            } else {
+                host.innerHTML =
+                    '<div class="space-y-3">' +
+                        '<div><label class="field-label block mb-1">Your name</label>' +
+                        '<input id="cf-name" data-autofocus class="input-field" ' +
+                            'autocomplete="name"></div>' +
+                        '<div><label class="field-label block mb-1">Email</label>' +
+                        '<input id="cf-email" type="email" class="input-field" ' +
+                            'autocomplete="username"></div>' +
+                        '<div><label class="field-label block mb-1">Password</label>' +
+                        '<input id="cf-pass" type="password" class="input-field" ' +
+                            'autocomplete="new-password">' +
+                        '<p class="text-xs text-slate-400 mt-1">At least 8 characters.</p></div>' +
+                        '<button data-do="signup" class="w-full px-4 py-2 text-sm rounded-lg ' +
+                            'bg-sky-600 text-white hover:bg-sky-700">Create account</button>' +
+                    '</div>';
+            }
+
+            u.on(u.$('#cf-pass', m.panel), 'keydown', function (e) {
+                if (e.key === 'Enter') submit();
+            });
+        }
+
+        function busy(on, label) {
+            var btn = u.$('[data-do]', m.panel);
+            if (!btn) return;
+            btn.disabled = on;
+            btn.innerHTML = on
+                ? '<span class="inline-flex items-center gap-2">' + spinner() + label + '</span>'
+                : (mode === 'signin' ? 'Sign in' : 'Create account');
+        }
+
+        function submit() {
+            var email = (u.$('#cf-email', m.panel) || {}).value || '';
+            var pass = (u.$('#cf-pass', m.panel) || {}).value || '';
+
+            if (mode === 'signin') {
+                busy(true, 'Signing in…');
+                store.cloudAvailable();
+                RB.cloud.auth.signIn(email, pass)
+                    .then(function (user) { finishSignIn(user, m); })
+                    .catch(function (err) { busy(false); toast(err.message, 'error', 6000); });
+            } else {
+                var name = (u.$('#cf-name', m.panel) || {}).value || '';
+                busy(true, 'Creating…');
+                RB.cloud.auth.signUp(email, pass, name)
+                    .then(function (user) { finishSignIn(user, m, true); })
+                    .catch(function (err) { busy(false); toast(err.message, 'error', 6000); });
+            }
+        }
+
+        u.on(m.panel, 'click', function (e) {
+            var tab = e.target.closest('[data-tab]');
+            if (tab) return setTab(tab.dataset.tab);
+
+            if (e.target.closest('[data-do]')) return submit();
+
+            if (e.target.closest('[data-google]')) {
+                return RB.cloud.auth.signInWithGoogle()
+                    .then(function (user) { finishSignIn(user, m); })
+                    .catch(function (err) { toast(err.message, 'error', 7000); });
+            }
+
+            if (e.target.closest('[data-guest]')) {
+                m.close();
+                return toast('Carrying on without an account. Your CVs stay in this browser.', 'info', 5000);
+            }
+
+            if (e.target.closest('[data-forgot]')) {
+                var email = (u.$('#cf-email', m.panel) || {}).value || '';
+                if (!u.isValidEmail(email)) {
+                    return toast('Enter your email address first, then tap "Forgot your password?".', 'info', 5000);
+                }
+                return RB.cloud.auth.sendPasswordReset(email)
+                    .then(function () {
+                        toast('Password reset link sent to ' + u.trim(email) +
+                              '. Check your spam folder if it does not arrive.', 'ok', 8000);
+                    })
+                    .catch(function (err) { toast(err.message, 'error', 6000); });
+            }
+        });
+
+        setTab(mode);
+    }
+
+    /* After a successful cloud sign-in: offer to copy local CVs up,
+       then reload whichever CV the account holds. */
+    function finishSignIn(user, m, isNew) {
+        if (m) m.close();
+        state.user = user;
+        renderIdentity();
+
+        store.countLocalResumes()
+            .then(function (n) {
+                if (!n) return null;
+                return confirmModal({
+                    title: 'Copy your local CVs to this account?',
+                    message: 'This browser has ' + n + ' saved CV' + (n === 1 ? '' : 's') +
+                             '. Copy ' + (n === 1 ? 'it' : 'them') + ' to your account so ' +
+                             (n === 1 ? 'it' : 'they') + ' reach your other devices?',
+                    detail: 'The local copies are kept either way — this copies rather than moves, ' +
+                            'so nothing is lost if you signed in by mistake.',
+                    okLabel: 'Copy to my account',
+                    cancelLabel: 'Not now'
+                }).then(function (ok) {
+                    if (!ok) return null;
+                    return store.uploadLocalResumes().then(function (res) {
+                        if (res.copied) {
+                            toast('Copied ' + res.copied + ' CV' + (res.copied === 1 ? '' : 's') +
+                                  ' to your account.', 'ok', 5000);
+                        } else {
+                            toast('Nothing new to copy — your account already has these.', 'info');
+                        }
+                    });
+                });
+            })
+            .catch(function (err) { toast(err.message, 'error', 6000); })
+            .then(function () {
+                state.recordId = null;
+                return bootstrapRecord();
+            })
+            .then(function () {
+                renderIdentity();
+                if (isNew) {
+                    toast('Account created. A verification email is on its way — you can ' +
+                          'use the app straight away.', 'ok', 7000);
+                } else {
+                    toast('Signed in as ' + (user.email || user.displayName) + '.', 'ok');
+                }
+                var note = RB.cloud.persistenceNote();
+                if (note) toast(note, 'info', 7000);
+            });
+    }
+
+    function openCloudAccountModal() {
+        var user = store.currentCloudUser();
+        var providers = user.providers || [];
+        var usesGoogle = providers.indexOf('google.com') !== -1;
+
+        var m = openModal({
+            title: user.displayName || 'Your account',
+            subtitle: user.email + (usesGoogle ? ' · Google' : ''),
+            size: 'sm',
+            body:
+                '<div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 mb-4">' +
+                    '<p class="text-xs text-emerald-800 leading-relaxed">' +
+                        '<strong>Syncing.</strong> Your CVs are saved to your account and ' +
+                        'available on any device you sign in to.</p>' +
+                '</div>' +
+                (!user.emailVerified && !usesGoogle
+                    ? '<div class="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-4">' +
+                      '<p class="text-xs text-amber-800 leading-relaxed mb-2">' +
+                      'Your email is not verified yet. It is not required to use the app, but ' +
+                      'you will need it to recover your account if you forget your password.</p>' +
+                      '<button data-do="resend" class="text-xs font-medium text-amber-900 ' +
+                      'underline">Resend verification email</button></div>'
+                    : '') +
+                '<div class="space-y-2">' +
+                    (usesGoogle ? '' :
+                        '<button data-do="reset" class="w-full text-left p-3 rounded-lg border ' +
+                        'border-slate-200 hover:bg-slate-50 text-sm text-slate-700">' +
+                        'Send me a password reset email</button>') +
+                    '<button data-do="upload" class="w-full text-left p-3 rounded-lg border ' +
+                        'border-slate-200 hover:bg-slate-50 text-sm text-slate-700">' +
+                        'Copy this browser\'s local CVs into my account</button>' +
+                    '<button data-do="signout" class="w-full text-left p-3 rounded-lg border ' +
+                        'border-slate-200 hover:bg-slate-50 text-sm text-slate-700">Sign out</button>' +
+                    '<button data-do="delete" class="w-full text-left p-3 rounded-lg border ' +
+                        'border-red-200 hover:bg-red-50 text-sm text-red-700">' +
+                        'Delete my account and all its CVs</button>' +
+                '</div>' +
+                '<p class="text-[11px] text-slate-400 leading-relaxed mt-4">' +
+                    u.esc(CLOUD_STORAGE_NOTE) + '</p>'
+        });
+
+        u.on(m.panel, 'click', function (e) {
+            var btn = e.target.closest('[data-do]');
+            if (!btn) return;
+            var action = btn.dataset.do;
+
+            if (action === 'resend') {
+                return RB.cloud.auth.resendVerification()
+                    .then(function () { toast('Verification email sent.', 'ok'); })
+                    .catch(function (err) { toast(err.message, 'error', 6000); });
+            }
+
+            if (action === 'reset') {
+                return RB.cloud.auth.sendPasswordReset(user.email)
+                    .then(function () {
+                        toast('Password reset link sent to ' + user.email + '.', 'ok', 7000);
+                    })
+                    .catch(function (err) { toast(err.message, 'error', 6000); });
+            }
+
+            if (action === 'upload') {
+                return store.uploadLocalResumes()
+                    .then(function (res) {
+                        if (res.copied) {
+                            toast('Copied ' + res.copied + ' CV' + (res.copied === 1 ? '' : 's') +
+                                  ' into your account.', 'ok', 5000);
+                            openCvManager();
+                        } else {
+                            toast('Nothing new to copy.', 'info');
+                        }
+                    })
+                    .catch(function (err) { toast(err.message, 'error', 6000); });
+            }
+
+            if (action === 'signout') {
+                m.close();
+                return RB.cloud.auth.signOut().then(function () {
+                    state.user = null;
+                    state.recordId = null;
+                    renderIdentity();
+                    toast('Signed out. Your account CVs stay in your account.', 'ok');
+                    return bootstrapRecord();
+                }).then(renderIdentity);
+            }
+
+            if (action === 'delete') {
+                m.close();
+                return openDeleteCloudAccount(user);
+            }
+        });
+    }
+
+    function openDeleteCloudAccount(user) {
+        var usesPassword = (user.providers || []).indexOf('password') !== -1;
+
+        var m = openModal({
+            title: 'Delete your account?',
+            size: 'sm',
+            body:
+                '<p class="text-sm text-slate-600 leading-relaxed mb-3">' +
+                'This permanently deletes the account <strong>' + u.esc(user.email) +
+                '</strong> and every CV stored in it, on every device. It cannot be undone.</p>' +
+                '<p class="text-sm text-slate-600 leading-relaxed mb-3">' +
+                'Download a backup from <strong>My CVs</strong> first if you might want them later.</p>' +
+                (usesPassword
+                    ? '<label class="field-label block mb-1">Enter your password to confirm</label>' +
+                      '<input id="dc-pass" data-autofocus type="password" class="input-field" ' +
+                      'autocomplete="current-password">'
+                    : '<p class="text-xs text-slate-500">You will be asked to confirm with Google.</p>'),
+            footer:
+                '<button data-close class="px-4 py-2 text-sm rounded-lg border border-slate-300 ' +
+                    'text-slate-600 hover:bg-slate-100">Cancel</button>' +
+                '<button data-del class="px-4 py-2 text-sm rounded-lg bg-red-600 text-white ' +
+                    'hover:bg-red-700">Delete everything</button>'
+        });
+
+        u.on(u.$('[data-del]', m.panel), 'click', function () {
+            var pass = (u.$('#dc-pass', m.panel) || {}).value || '';
+            RB.cloud.auth.deleteAccount(pass)
+                .then(function () {
+                    state.user = null;
+                    state.recordId = null;
+                    m.close();
+                    renderIdentity();
+                    toast('Account and all its CVs deleted.', 'ok', 6000);
+                    return bootstrapRecord();
+                })
+                .then(renderIdentity)
+                .catch(function (err) { toast(err.message, 'error', 7000); });
+        });
     }
 
     var SECURITY_NOTE = 'These profiles live only in this browser on this device. The PIN keeps ' +
@@ -1527,7 +1919,7 @@
     function openUploadModal() {
         var m = openModal({
             title: 'Upload an existing CV',
-            subtitle: 'Read here in your browser. Nothing is uploaded to a server.',
+            subtitle: 'Read here in your browser. The file itself is never uploaded.',
             size: 'md',
             body:
                 '<div id="dz" class="dropzone p-8 text-center cursor-pointer">' +
@@ -2309,15 +2701,38 @@
                     toast('Using simplified storage — this browser blocks its database on ' +
                           'local files. Everything works; download backups to be safe.', 'warn', 7000);
                 }
-                return store.currentUser();
+
+                /* When cloud accounts are configured, Firebase decides
+                   who is signed in — and it restores the session
+                   asynchronously. Wait for that first answer before
+                   opening a CV, otherwise we would load the local one
+                   and then yank it away a moment later. */
+                if (info.cloudAvailable) {
+                    return new Promise(function (resolve) {
+                        var settled = false;
+                        store.watchCloudAuth(function (user) {
+                            state.user = user;
+                            if (!settled) { settled = true; return resolve(); }
+                            // A later change (sign-out in another tab,
+                            // token expiry) — re-open the right CV.
+                            state.recordId = null;
+                            bootstrapRecord().then(renderIdentity);
+                        });
+                        // Never hang the app on a stalled network.
+                        setTimeout(function () {
+                            if (!settled) { settled = true; resolve(); }
+                        }, 6000);
+                    });
+                }
+
+                return store.currentUser().then(function (user) { state.user = user; });
             })
-            .then(function (user) {
-                state.user = user;
-                return bootstrapRecord();
-            })
+            .then(function () { return bootstrapRecord(); })
             .then(function () {
                 renderIdentity();
                 refreshIcons();
+                var note = store.cloudAvailable() && RB.cloud.persistenceNote();
+                if (note) toast(note, 'info', 7000);
             })
             .catch(function (err) {
                 console.error(err);

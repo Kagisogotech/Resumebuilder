@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// ============================================================
+// Firestore security rules for Nene's CV Platform
+//
+// These rules are the ONLY thing protecting your users' CVs. The
+// Firebase config in js/firebase-config.js is public by design;
+// anyone can read it out of the page source and talk to your
+// project. What stops them reading other people's data is this
+// file. Deploy it before you tell anyone the app is live.
+//
+// Deploy:
+//     firebase deploy --only firestore:rules
+// or paste it into Firebase console -> Firestore -> Rules -> Publish.
+//
+// Model: users/{uid}/resumes/{resumeId}
+// A signed-in user may read and write only documents beneath their
+// own uid. Everything else is denied, including listing the users
+// collection, so one account cannot enumerate the others.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // A CV document must look like a CV, and must claim the right
+    // owner. Without the size cap a single account could be used to
+    // fill the project's quota; without the field checks a client
+    // could store arbitrary data in your database.
+    function validResume(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(
+               ['owner', 'name', 'template', 'data', 'createdAt', 'updatedAt'])
+             && d.owner == uid
+             && d.name is string       && d.name.size() <= 120
+             && d.template is string   && d.template.size() <= 40
+             && d.data is map
+             && d.createdAt is number
+             && d.updatedAt is number;
+    }
+
+    match /users/{uid} {
+
+      // The parent user document is not used; deny it outright
+      // rather than leaving it implicitly writable.
+      allow read, write: if false;
+
+      match /resumes/{resumeId} {
+        allow get, list:      if isOwner(uid);
+        allow create, update:  if isOwner(uid) && validResume(uid);
+        allow delete:          if isOwner(uid);
+      }
+    }
+
+    // Anything not matched above is denied. Do not add a
+    // catch-all allow rule here.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
