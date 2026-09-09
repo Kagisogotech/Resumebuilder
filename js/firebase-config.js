@@ -19,14 +19,23 @@
 
 window.RB = window.RB || {};
 
-RB.firebaseConfig = {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: ''
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCv3mJZi8TgsFzal8OMq5jywPWzFAZw3G0",
+  authDomain: "nene-cv-platform.firebaseapp.com",
+  projectId: "nene-cv-platform",
+  storageBucket: "nene-cv-platform.firebasestorage.app",
+  messagingSenderId: "162394084099",
+  appId: "1:162394084099:web:4de80702d421a10d0b4f36"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 /* True once the config above is filled in. The UI uses this to
    decide whether to offer cloud accounts or local PIN profiles. */
