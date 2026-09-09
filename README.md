@@ -9,6 +9,8 @@ export something an applicant tracking system can actually read.
 Everything runs in the browser. There is no server, no build step and no dependencies
 to install — it is static HTML, CSS and plain JavaScript.
 
+**[Try it →](https://kagisogotech.github.io/Resumebuilder/)**
+
 ---
 
 ## Why this exists
