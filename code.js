@@ -685,6 +685,86 @@
         renderAuthSlot();
     }
 
+    /* ============================================================
+       THEME TOGGLE
+       Cycles system → light → dark → system. The icon shows what is
+       currently in force, and the tooltip names what a click does.
+       ============================================================ */
+
+    var THEME_ORDER = ['system', 'light', 'dark'];
+
+    var THEME_META = {
+        system: { icon: 'monitor', label: 'Theme: match my device' },
+        light:  { icon: 'sun',     label: 'Theme: light' },
+        dark:   { icon: 'moon',    label: 'Theme: dark' }
+    };
+
+    function renderThemeToggle() {
+        var btn = u.$('#theme-toggle');
+        if (!btn) return;
+
+        var pref = u.themePreference();
+        var meta = THEME_META[pref] || THEME_META.system;
+        var next = THEME_ORDER[(THEME_ORDER.indexOf(pref) + 1) % THEME_ORDER.length];
+
+        btn.innerHTML = '<span data-lucide="' + u.escAttr(meta.icon) + '" ' +
+            'class="w-[18px] h-[18px]"></span>';
+        btn.title = meta.label + ' — click for ' + next;
+        btn.setAttribute('aria-label', meta.label + '. Switch to ' + next + '.');
+        refreshIcons(btn);
+    }
+
+    function cycleTheme() {
+        var pref = u.themePreference();
+        var next = THEME_ORDER[(THEME_ORDER.indexOf(pref) + 1) % THEME_ORDER.length];
+        u.setTheme(next);
+        renderThemeToggle();
+
+        var resolved = u.resolvedTheme(next);
+        toast(next === 'system'
+            ? 'Following your device — currently ' + resolved + '.'
+            : u.titleCase(next) + ' theme.', 'info', 2200);
+    }
+
+    /* ============================================================
+       STICKY OFFSETS
+
+       The header is two rows and its height changes with the
+       breakpoint — 112px on a phone, less once the action bar and
+       brand lockup reflow. Hardcoding a top offset meant the mobile
+       tab strip slid underneath the header by 16px when scrolled.
+       Measure it instead and publish it as a CSS variable.
+       ============================================================ */
+
+    function syncHeaderHeight() {
+        var header = document.querySelector('header');
+        if (!header) return;
+        var h = Math.round(header.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--header-h', h + 'px');
+    }
+
+    /* ============================================================
+       MOBILE EDIT / PREVIEW SWITCH
+       ============================================================ */
+
+    function setMobilePane(pane) {
+        var main = u.$('#app-main');
+        if (!main) return;
+        main.dataset.mobilePane = pane;
+
+        u.$$('[data-mobile-tab]').forEach(function (tab) {
+            var on = tab.dataset.mobileTab === pane;
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+            tab.className = 'px-3 py-2 rounded-md text-xs font-semibold transition-colors ' +
+                (on
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700');
+        });
+
+        // Jumping to the preview should show the top of the CV.
+        if (pane === 'preview') window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     /* The header's account control. Guests get an explicit "Sign in"
        button rather than a bare icon: the whole benefit of an account
        is invisible otherwise, and this is the one place to surface it. */
@@ -2687,6 +2767,22 @@
         wireEditing();
 
         u.on(u.$('#score-pill'), 'click', openAtsReport);
+        u.on(u.$('#theme-toggle'), 'click', cycleTheme);
+
+        u.$$('[data-mobile-tab]').forEach(function (tab) {
+            u.on(tab, 'click', function () { setMobilePane(tab.dataset.mobileTab); });
+        });
+        setMobilePane('edit');
+        renderThemeToggle();
+
+        syncHeaderHeight();
+        window.addEventListener('resize', u.debounce(syncHeaderHeight, 150));
+        // The header grows once icons render and the CV name lands in it.
+        setTimeout(syncHeaderHeight, 400);
+        setTimeout(syncHeaderHeight, 1200);
+
+        // Keep the toggle icon honest when the OS flips while open.
+        u.onThemeChange(renderThemeToggle);
 
         // Warn on close only when a save is genuinely still pending.
         window.addEventListener('beforeunload', function (e) {

@@ -249,8 +249,77 @@ window.RB = window.RB || {};
         });
     }
 
+    /* ---------- theme ----------
+       Three states, not two: "system" follows the OS setting and is
+       the default, because a person who has set their laptop to dark
+       at night expects apps to follow without being told twice.
+       Light and dark are explicit overrides.
+
+       The chosen theme is written to <html data-theme> by an inline
+       script in the page head, before first paint — see welcome.html.
+       Doing it here would flash the wrong colours on every load. */
+
+    var THEME_KEY = 'rb.theme';
+    var themeListeners = [];
+    var mediaQuery = window.matchMedia
+        ? window.matchMedia('(prefers-color-scheme: dark)')
+        : null;
+
+    function themePreference() {
+        try {
+            var stored = localStorage.getItem(THEME_KEY);
+            if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+        } catch (e) { /* storage blocked */ }
+        return 'system';
+    }
+
+    function resolvedTheme(preference) {
+        var pref = preference || themePreference();
+        if (pref === 'system') {
+            return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+        }
+        return pref;
+    }
+
+    function applyTheme(preference) {
+        var resolved = resolvedTheme(preference);
+        document.documentElement.setAttribute('data-theme', resolved);
+
+        // Tint the mobile browser chrome to match.
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0f1115' : '#f1f5f9');
+
+        themeListeners.forEach(function (fn) {
+            try { fn(preference || themePreference(), resolved); } catch (e) {}
+        });
+        return resolved;
+    }
+
+    function setTheme(preference) {
+        try { localStorage.setItem(THEME_KEY, preference); } catch (e) {}
+        return applyTheme(preference);
+    }
+
+    function onThemeChange(fn) {
+        themeListeners.push(fn);
+    }
+
+    /* Follow the OS live, but only while the user is on "system". */
+    if (mediaQuery) {
+        var handler = function () {
+            if (themePreference() === 'system') applyTheme('system');
+        };
+        if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', handler);
+        else if (mediaQuery.addListener) mediaQuery.addListener(handler);
+    }
+
     RB.util = {
         esc: esc,
+        themePreference: themePreference,
+        resolvedTheme: resolvedTheme,
+        applyTheme: applyTheme,
+        setTheme: setTheme,
+        onThemeChange: onThemeChange,
         escAttr: escAttr,
         $: $,
         $$: $$,

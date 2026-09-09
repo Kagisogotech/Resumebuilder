@@ -1,9 +1,10 @@
 /* ============================================================
-   Smart Resume Builder — stylesheet
+   Nene's CV Platform — stylesheet
    ------------------------------------------------------------
-   Two concerns live here:
+   Three concerns live here:
      1. App chrome (small; Tailwind does most of the work)
-     2. The resume document itself — deliberately ATS-safe
+     2. The light/dark theme tokens and utility remap
+     3. The resume document itself — deliberately ATS-safe
 
    ATS rules baked into the resume styles below:
      - one single column, never a sidebar or a grid
@@ -18,15 +19,76 @@
 
 body {
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--app-bg);
+    color: var(--app-text);
+}
+
+
+/* ============================================================
+   THEME
+   ------------------------------------------------------------
+   One set of tokens, flipped by data-theme on <html>. The app's
+   markup uses Tailwind utilities in hundreds of places, so rather
+   than adding a dark: variant to every one, the small number of
+   neutral utilities actually used are remapped onto these tokens
+   below. Accent colours (sky, emerald, red, amber) are left alone;
+   they read correctly on both grounds.
+
+   The resume document is deliberately EXEMPT. It is a sheet of
+   paper: it stays white in dark mode because that is what prints,
+   what exports, and what the employer opens. Inverting it would
+   misrepresent the thing you are about to send.
+   ============================================================ */
+
+:root {
+    --app-bg: #f1f5f9;
+    --app-surface: #ffffff;
+    --app-surface-2: #f8fafc;
+    --app-surface-3: #f1f5f9;
+    --app-surface-4: #e2e8f0;
+    --app-border: #e2e8f0;
+    --app-border-2: #cbd5e1;
+    --app-text: #0f172a;
+    --app-text-2: #1e293b;
+    --app-text-3: #334155;
+    --app-text-4: #475569;
+    --app-muted: #64748b;
+    --app-faint: #94a3b8;
+    --app-solid: #1e293b;
+    --app-solid-hover: #0f172a;
+    --app-shadow: rgba(15, 23, 42, .06);
+    --app-ring-track: #e2e8f0;
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    --app-bg: #0f1115;
+    --app-surface: #171a20;
+    --app-surface-2: #1c2027;
+    --app-surface-3: #22262f;
+    --app-surface-4: #2c313b;
+    --app-border: #2a2f39;
+    --app-border-2: #3a4150;
+    --app-text: #e9ebee;
+    --app-text-2: #dfe2e6;
+    --app-text-3: #c6cbd3;
+    --app-text-4: #aeb4be;
+    --app-muted: #979ea9;
+    --app-faint: #7c848f;
+    --app-solid: #2f3742;
+    --app-solid-hover: #3a4350;
+    --app-shadow: rgba(0, 0, 0, .4);
+    --app-ring-track: #2c313b;
+    color-scheme: dark;
 }
 
 /* ---------- App chrome ---------- */
 
 .card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
     border-radius: 0.75rem;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    box-shadow: 0 1px 2px var(--app-shadow);
 }
 
 .field-label {
@@ -34,7 +96,141 @@ body {
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;
-    color: #64748b;
+    color: var(--app-muted);
+}
+
+
+/* ============================================================
+   DARK MODE UTILITY REMAP
+
+   Everything below is scoped to html[data-theme="dark"] and, where
+   it could reach the CV, excluded from .resume-doc. Selector
+   specificity (0,2,1) beats the plain utility (0,1,0), so no
+   !important is needed anywhere.
+
+   Deliberately NOT remapped: text-white, and the sky/emerald/red/
+   amber accents. text-white sits on coloured buttons where it is
+   still correct, and the accents are legible on both grounds.
+   ============================================================ */
+
+html[data-theme="dark"] .bg-white:not(.resume-doc) { background-color: var(--app-surface); }
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-slate-50\/80,
+html[data-theme="dark"] .bg-slate-50\/70   { background-color: var(--app-surface-2); }
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] .bg-slate-100\/95  { background-color: var(--app-surface-3); }
+html[data-theme="dark"] .bg-slate-200      { background-color: var(--app-surface-4); }
+html[data-theme="dark"] .bg-slate-800,
+html[data-theme="dark"] .bg-slate-900      { background-color: var(--app-solid); }
+
+html[data-theme="dark"] .hover\:bg-slate-50:hover  { background-color: var(--app-surface-2); }
+html[data-theme="dark"] .hover\:bg-slate-100:hover { background-color: var(--app-surface-3); }
+html[data-theme="dark"] .hover\:bg-slate-200:hover { background-color: var(--app-surface-4); }
+html[data-theme="dark"] .hover\:bg-slate-900:hover { background-color: var(--app-solid-hover); }
+
+html[data-theme="dark"] .text-slate-900 { color: var(--app-text); }
+html[data-theme="dark"] .text-slate-800 { color: var(--app-text-2); }
+html[data-theme="dark"] .text-slate-700 { color: var(--app-text-3); }
+html[data-theme="dark"] .text-slate-600 { color: var(--app-text-4); }
+html[data-theme="dark"] .text-slate-500 { color: var(--app-muted); }
+html[data-theme="dark"] .text-slate-400 { color: var(--app-faint); }
+html[data-theme="dark"] .text-slate-300 { color: var(--app-faint); }
+
+html[data-theme="dark"] .hover\:text-slate-700:hover,
+html[data-theme="dark"] .hover\:text-slate-800:hover { color: var(--app-text); }
+html[data-theme="dark"] .group:hover .group-hover\:text-slate-500 { color: var(--app-text-4); }
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200 { border-color: var(--app-border); }
+html[data-theme="dark"] .border-slate-300 { border-color: var(--app-border-2); }
+html[data-theme="dark"] .hover\:border-slate-300:hover { border-color: var(--app-border-2); }
+
+/* Form controls */
+html[data-theme="dark"] .input-field,
+html[data-theme="dark"] .textarea-field,
+html[data-theme="dark"] .select-field {
+    background: var(--app-surface-2);
+    border-color: var(--app-border-2);
+    color: var(--app-text);
+}
+
+html[data-theme="dark"] .input-field::placeholder,
+html[data-theme="dark"] .textarea-field::placeholder { color: var(--app-faint); }
+
+html[data-theme="dark"] .input-field:focus,
+html[data-theme="dark"] .textarea-field:focus,
+html[data-theme="dark"] .select-field:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, .18);
+}
+
+/* A disabled month input goes nearly invisible otherwise */
+html[data-theme="dark"] .input-field:disabled {
+    background: var(--app-surface);
+    color: var(--app-faint);
+}
+
+/* Browsers render the native date/colour pickers dark via
+   color-scheme, but the calendar glyph still needs inverting. */
+html[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator,
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(.6);
+}
+
+html[data-theme="dark"] .dropzone { border-color: var(--app-border-2); }
+html[data-theme="dark"] .dropzone.is-dragging {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, .08);
+}
+
+html[data-theme="dark"] .score-ring { background: conic-gradient(var(--ring) calc(var(--pct) * 1%), var(--app-ring-track) 0); }
+html[data-theme="dark"] .score-ring::before { background: var(--app-surface); }
+
+/* Severity chips: same meaning, legible on a dark ground */
+html[data-theme="dark"] .chip-pass { background: rgba(16, 185, 129, .16); color: #6ee7b7; }
+html[data-theme="dark"] .chip-warn { background: rgba(245, 158, 11, .16); color: #fcd34d; }
+html[data-theme="dark"] .chip-fail { background: rgba(239, 68, 68, .16); color: #fca5a5; }
+
+/* Tinted accent panels used in reports and modals */
+html[data-theme="dark"] .bg-sky-50      { background-color: rgba(56, 189, 248, .10); }
+html[data-theme="dark"] .bg-emerald-50  { background-color: rgba(16, 185, 129, .10); }
+html[data-theme="dark"] .bg-amber-50    { background-color: rgba(245, 158, 11, .10); }
+html[data-theme="dark"] .bg-red-50      { background-color: rgba(239, 68, 68, .10); }
+html[data-theme="dark"] .hover\:bg-sky-50:hover     { background-color: rgba(56, 189, 248, .12); }
+html[data-theme="dark"] .hover\:bg-sky-50\/50:hover { background-color: rgba(56, 189, 248, .10); }
+html[data-theme="dark"] .hover\:bg-red-50:hover     { background-color: rgba(239, 68, 68, .12); }
+html[data-theme="dark"] .hover\:bg-emerald-200:hover{ background-color: rgba(16, 185, 129, .26); }
+html[data-theme="dark"] .bg-emerald-100 { background-color: rgba(16, 185, 129, .18); }
+html[data-theme="dark"] .bg-sky-100     { background-color: rgba(56, 189, 248, .18); }
+
+html[data-theme="dark"] .border-sky-200     { border-color: rgba(56, 189, 248, .30); }
+html[data-theme="dark"] .border-emerald-200 { border-color: rgba(16, 185, 129, .30); }
+html[data-theme="dark"] .border-amber-200   { border-color: rgba(245, 158, 11, .30); }
+html[data-theme="dark"] .border-red-200     { border-color: rgba(239, 68, 68, .30); }
+html[data-theme="dark"] .border-sky-300     { border-color: rgba(56, 189, 248, .40); }
+
+html[data-theme="dark"] .text-sky-900,
+html[data-theme="dark"] .text-sky-800,
+html[data-theme="dark"] .text-sky-700     { color: #7dd3fc; }
+html[data-theme="dark"] .text-emerald-800,
+html[data-theme="dark"] .text-emerald-700 { color: #6ee7b7; }
+html[data-theme="dark"] .text-amber-900,
+html[data-theme="dark"] .text-amber-800,
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-amber-600   { color: #fcd34d; }
+html[data-theme="dark"] .text-red-800,
+html[data-theme="dark"] .text-red-700,
+html[data-theme="dark"] .text-red-600     { color: #fca5a5; }
+html[data-theme="dark"] .bg-sky-50 .text-sky-700\/80  { color: rgba(125, 211, 252, .8); }
+html[data-theme="dark"] .text-sky-500\/70 { color: rgba(125, 211, 252, .6); }
+
+/* Diff view in the change log */
+html[data-theme="dark"] .decoration-red-300 { text-decoration-color: rgba(239, 68, 68, .6); }
+
+/* The preview sits on the page background, so give the paper a
+   soft edge instead of letting it glare against near-black. */
+html[data-theme="dark"] .resume-doc {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .10), 0 8px 24px rgba(0, 0, 0, .45);
 }
 
 .input-field,
@@ -150,6 +346,19 @@ body {
     columns: 1;
 }
 
+/* ============================================================
+   SMALL SCREENS
+   ============================================================ */
+
+/* Below lg the two columns stack, and the Edit/Preview switch shows
+   one at a time. Without this you scroll through the entire form to
+   reach the CV, which is exactly the thing you want to keep glancing
+   at while you type. */
+@media (max-width: 1023px) {
+    #app-main[data-mobile-pane="edit"]    [data-pane="preview"] { display: none; }
+    #app-main[data-mobile-pane="preview"] [data-pane="edit"]    { display: none; }
+}
+
 /* On a phone the print-scale padding eats most of the column, so
    pull it in. Only the preview is affected — exports always use the
    full page geometry, since they are laid out for paper. */
@@ -157,7 +366,35 @@ body {
     .resume-doc {
         padding: 1.1rem 1rem;
         border-radius: .375rem;
+        font-size: 10pt;
     }
+
+    .resume-doc .r-name { font-size: 17pt; }
+}
+
+/* Touch targets. The move/remove icon buttons on an entry card are
+   fine for a mouse and far too small for a thumb; Apple and Google
+   both put the floor around 44px, and these were nearer 22. */
+@media (pointer: coarse) {
+    #input-sections [data-remove],
+    #input-sections [data-move] {
+        min-width: 34px;
+        min-height: 34px;
+        display: inline-grid;
+        place-items: center;
+    }
+
+    .input-field,
+    .select-field {
+        /* 16px stops iOS Safari zooming the page on focus */
+        font-size: 16px;
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
+
+    .textarea-field { font-size: 16px; }
+
+    #section-nav button { padding: .5rem .85rem; }
 }
 
 /* --- Header block: name, target title, one contact line --- */

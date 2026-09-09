@@ -75,6 +75,21 @@ Optional local profiles with a PIN, and as many CVs as you like per profile — 
 duplicate, delete, and download a JSON backup. A tailored CV per role beats one generic
 CV every time.
 
+### Light, dark and small screens
+
+A theme control in the header cycles **match my device → light → dark**, remembered
+between visits and applied before first paint so there is no white flash on load. "Match
+my device" is the default and follows the OS live.
+
+**The CV preview stays white in dark mode, deliberately.** It is a sheet of paper: white
+is what prints, what exports, and what the employer opens. Inverting it would
+misrepresent the document you are about to send, so only the chrome around it darkens.
+
+On phones the two columns stack behind an **Edit / Preview** switch, so you are not
+scrolling past the whole form to glance at your CV. Inputs render at 16px on touch devices
+(smaller text makes iOS Safari zoom the page on focus), icon buttons meet a 34px touch
+target, and the preview reflows to the narrower column.
+
 ### Exports
 PDF (real text layer), Word `.docx` (real OOXML), plain text, self-contained HTML, and
 browser print. Plus copy-as-plain-text for "paste your CV here" boxes.
